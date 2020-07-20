@@ -1,0 +1,56 @@
+{:paths ["src/main" "resources"]
+
+ :deps {
+        bidi                                {:mvn/version "2.1.6"}
+        bk/ring-gzip                        {:mvn/version "0.3.0"}
+        com.cognitect/transit-clj           {:mvn/version "1.0.324"}
+        com.fulcrologic/fulcro-garden-css   {:mvn/version "3.0.7"}
+        com.fulcrologic/fulcro              {:mvn/version "3.2.9"}
+        com.fulcrologic/guardrails          {:mvn/version "0.0.12"}
+        com.fulcrologic/semantic-ui-wrapper {:mvn/version "1.0.1"}
+        com.taoensso/timbre                 {:mvn/version "4.11.0-alpha1"}
+        com.taoensso/tufte                  {:mvn/version "2.1.0"}
+        com.wsscode/pathom                  {:mvn/version "2.2.26"}
+        garden                              {:mvn/version "1.3.10"}
+        hiccup                              {:mvn/version "1.0.5"}
+        http-kit                            {:mvn/version "2.3.0"}
+        io.aviso/pretty                     {:mvn/version "0.1.37"}
+        io.replikativ/datahike              {:mvn/version "0.3.1"}
+        kibu/pushy                          {:mvn/version "0.3.8"}
+        me.raynes/conch                     {:mvn/version "0.8.0"}
+        me.raynes/fs                        {:mvn/version "1.4.6"}
+        mount                               {:mvn/version "0.1.16"}
+        org.clojure/clojure                 {:mvn/version "1.10.1"}
+        org.clojure/core.async              {:mvn/version "1.2.603"}
+        ring/ring-core                      {:mvn/version "1.7.1"}
+        ring/ring-defaults                  {:mvn/version "0.3.2"}
+        }
+
+ :aliases {:clj-tests {:extra-paths ["src/test"]
+                       :main-opts   ["-m" "kaocha.runner"]
+                       :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-529"}}}
+
+           ;; See https://github.com/clojure-emacs/cider-nrepl/blob/master/deps.edn for Emacs support
+           :dev {:extra-paths ["src/test" "src/dev" "src/workspaces"]
+                 :jvm-opts    ["-XX:-OmitStackTraceInFastThrow"]
+                 :extra-deps  {
+                               ;; These are either for the editor or cljs
+                               org.clojure/clojurescript       {:mvn/version "1.10.758"}
+                               thheller/shadow-cljs            {:mvn/version "2.9.10"}
+                               expound                         {:mvn/version "0.7.2"}
+                               fulcrologic/fulcro-spec         {:mvn/version "3.1.4"}
+                               binaryage/devtools              {:mvn/version "1.0.2"}
+                               nubank/workspaces               {:mvn/version "1.0.15"}
+                               org.clojure/tools.namespace     {:mvn/version "0.3.1"}
+                               com.cognitect/transit-cljs      {:mvn/version "0.8.264"}
+                               nrepl/nrepl                     {:mvn/version "0.7.0"}
+                               clj-commons/pomegranate         {:mvn/version "1.2.0"}
+                               com.fzakaria/slf4j-timbre       {:mvn/version "0.3.19"}
+                               com.gfredericks/clj-usage-graph {:mvn/version "0.3.0"} ;for generating graph
+                               refactor-nrepl                  {:mvn/version "2.5.0"}
+                               cider/cider-nrepl               {:mvn/version "0.25.1"}
+                               }}
+
+           :ancient {:main-opts  ["-m" "deps-ancient.deps-ancient"]
+                     :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
+           }}

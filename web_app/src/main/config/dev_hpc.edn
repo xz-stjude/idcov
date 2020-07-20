@@ -1,0 +1,6 @@
+{:db-location    "/var/idcov/db"
+ :file-base-path "/var/idcov/files"
+ :run-base-path  "/var/idcov/runs"
+ :log-path       "/var/idcov/log"
+
+ :org.httpkit.server/config {:port 37373}}

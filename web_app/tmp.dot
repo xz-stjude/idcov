@@ -1,0 +1,21 @@
+digraph G {
+rankdir="LR";
+fontname="monospace";
+node[fontname="monospace"];
+subgraph cluster_app_46_model_46_session {
+shape="rect";
+label="app.model.session";
+app_46_model_46_session_46_current_45_session_45_resolver[label="current-session-resolver"];
+app_46_model_46_session_46_response_45_updating_45_session[label="response-updating-session"];
+app_46_model_46_session_46_login_45_by_45_email[label="login-by-email"];
+app_46_model_46_session_46_logout[label="logout"];
+app_46_model_46_session_46_signup_33_[label="signup!"];
+app_46_model_46_session_46_resolvers[label="resolvers"];
+}
+app_46_model_46_session_46_login_45_by_45_email -> app_46_model_46_session_46_response_45_updating_45_session;
+app_46_model_46_session_46_logout -> app_46_model_46_session_46_response_45_updating_45_session;
+app_46_model_46_session_46_resolvers -> app_46_model_46_session_46_signup_33_;
+app_46_model_46_session_46_resolvers -> app_46_model_46_session_46_logout;
+app_46_model_46_session_46_resolvers -> app_46_model_46_session_46_current_45_session_45_resolver;
+app_46_model_46_session_46_resolvers -> app_46_model_46_session_46_login_45_by_45_email;
+}
