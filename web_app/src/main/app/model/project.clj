@@ -41,7 +41,8 @@
     ;;                                                         :tempfile     #object[java.io.File 0x6a9d213f "/tmp/ring-multipart-17154054071924291961.tmp"]
     ;;                                                         :size         18}]}
 
-    (file/store-files-and-add-them-to-project conn project-id files)
+    (doseq [file files]
+      (file/register-uploaded-file conn project-id file))
 
     {:account/id account-id})
   )

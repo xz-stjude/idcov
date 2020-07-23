@@ -51,35 +51,86 @@
         (d/transact conn [{:file/id   file-id
                            :file/size nil}])))))
 
-(defn store-files-and-add-them-to-project
-  "This function does the following to a list of files
+(defn generate-file-id
+  [file]
+  ;; TODO: use the sha256 hash of the file instead (to avoid duplication)
+  (util/uuid))
 
-  NOTE: files with the same filename will all be stored side-by-side without overwritting each other.
 
-      * Each file will be assigned a UUID.
-      * The file will be moved from the temporary folder into the storage folder
-      * The relation [:project/id :project/files :file/id] will be written to the database"
-  [conn project-id files]
-  (let [base-path (:file-base-path config/config)]
-    (log/spy base-path)
-    (doseq [file files]
-      ;; file =
-      ;;     {:filename "sample01_R1.fastq"
-      ;;      :content-type "xxx/xxx"
-      ;;      :tempfile #object[java.io.File 0x5a7d2ed6 "/tmp/ring-multipart-443736812093768988.tmp"]
-      ;;      :size 521212}
-      (let [;; TODO: use the sha256 hash of the file instead (to avoid duplication)
-            file-id   (util/uuid)
-            dest-file (get-file-path file-id)]
-        (fs/copy+ (:tempfile file) dest-file)
-        (fs/delete (:tempfile file))
-        (d/transact conn [{:project/id    project-id
-                           :project/files [{:file/id   file-id
-                                            :file/name (:filename file)
-                                            ;; File size is stored directly into the database because
-                                            ;; we would like to minimize the access to the file system,
-                                            ;; since it is something many frontend views would ask for.
-                                            :file/size (:size file)}]}])))))
+(defn register-file
+  "Copies the file to the file warehouse, and then register it on the database.
+
+  options:
+
+      :filename        - If a string, use it as the name of the file registered on the server.
+                         Otherwise, the original filename of the supplied path-to-file is used. (default: nil)
+
+      :link-method     - One of :copy, :sym-link, and :move. (default: :sym-link)
+
+      :project-id      - If an uuid, the registered file will be added to the project with supplied id.
+                         If nil, nothing will be done. (default: nil)
+  "
+  ([conn path-to-file] (register-file conn path-to-file {}))
+  ([conn path-to-file {:keys [filename link-method project-id]
+                       :or   {filename    nil
+                              link-method :sym-link
+                              project-id  nil}}]
+   (let [file      (io/file path-to-file)
+         filesize  (.length file) ; NOTE: .length follows sym-link
+         filename_ (if (string? filename)
+                     filename
+                     (.getName file))
+         file-id   (generate-file-id file)
+         dest-file (get-file-path file-id)]
+     (log/spy filename_)
+     (log/spy file-id)
+     (log/spy dest-file)
+     (log/debug #:file{:id   file-id
+                       :name filename_
+                       :size (.length file)})
+     (try
+
+       (case link-method
+         :sym-link (do
+                     (fs/mkdirs (.getParentFile dest-file))
+                     (fs/sym-link dest-file file))
+         :copy     (fs/copy+ file dest-file)
+         :move     (do
+                     (fs/copy+ file dest-file)
+                     (fs/delete file)))
+
+       (d/transact conn [{:file/id   file-id
+                          :file/name filename_
+                          ;; File size is stored directly into the database because
+                          ;; we would like to minimize the access to the file system,
+                          ;; since it is something many frontend views would ask for.
+                          :file/size filesize}])
+
+       (when (= java.util.UUID (class project-id))
+         (log/debug "YES!!")
+         (d/transact conn [{:project/id    project-id
+                            :project/files [{:file/id file-id}]}]))
+
+       (catch Exception e
+         (throw (ex-info "Error when trying to register a file"
+                         {:filename     filename
+                          :file         file
+                          :path-to-file path-to-file
+                          :filesize     filesize
+                          :file-id      file-id
+                          :dest-file    dest-file}
+                         e)))))))
+
+(defn register-uploaded-file
+  [conn project-id file]
+  ;; file =
+  ;;     {:filename "sample01_R1.fastq"
+  ;;      :content-type "xxx/xxx"
+  ;;      :tempfile #object[java.io.File 0x5a7d2ed6 "/tmp/ring-multipart-443736812093768988.tmp"]
+  ;;      :size 521212}
+  (register-file conn (:tempfile file)
+                 {:project-id  project-id
+                  :link-method :move}))
 
 (def resolvers [file-r])
 

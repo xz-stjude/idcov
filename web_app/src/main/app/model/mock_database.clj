@@ -136,25 +136,25 @@
                               :email    "zhuxun2@gmail.com",
                               :password "asdfasdf",
                               :projects
-                              [#:project{:id   #uuid "ab0eddef-e271-4148-9b67-ec8a419153ae",
-                                         :name "[FAKE] Webby's 20 COVID-19 Samples 4/17/2020"}
-                               #:project{:id    #uuid "0b374321-b06a-4c97-8e6d-23d43f7d2445",
-                                         :name  "[FAKE] MD Anderson 172 Samples"
-                                         :files [#:file{:id   #uuid "adac1aff-aaa5-425e-990c-fd5026fbda28",
-                                                        :name "sample01_R1.fastq",
-                                                        :size 351}
-                                                 #:file{:id   #uuid "677b7503-156d-4a59-bba9-8f57b3178f3e",
-                                                        :name "sample01_R2.fastq",
-                                                        :size 350}
-                                                 #:file{:id   #uuid "51193a05-5449-4db2-a58d-77317f5d2069",
-                                                        :name "sample02_R1.fastq",
-                                                        :size 351}
-                                                 #:file{:id   #uuid "a45878aa-7d07-47e1-9ca9-750607a29d0d",
-                                                        :name "sample02_R2.fastq",
-                                                        :size 351}]}]}
+                              [#:project{:id    #uuid "0b374321-b06a-4c97-8e6d-23d43f7d2445",
+                                         :name  "July batch"
+                                         :files [#:file{:id   #uuid "c7c64b69-8887-4db6-9e27-3cd5c7fe1cdb"
+                                                        :name "Rabeh-1_S7_R1.fastq.gz"
+                                                        :size 2319852480}
+                                                 #:file{:id   #uuid "c1da0e8c-3cf9-4154-9ee1-45e0d83dd039"
+                                                        :name "Rabeh-1_S7_R2.fastq.gz"
+                                                        :size 2752387258}
+                                                 #:file{:id   #uuid "59917fb7-fca3-4772-b45b-344aea01fdaf"
+                                                        :name "Rabeh-2_S8_R1.fastq.gz"
+                                                        :size 1298479424}
+                                                 #:file{:id   #uuid "6b751c08-a30e-4714-b1c6-72b1fbee5968"
+                                                        :name "Rabeh-2_S8_R2.fastq.gz"
+                                                        :size 1548732741}]}]}
                     #:account{:id       #uuid "16510c9e-d7f5-4ffe-a0d6-388b2efcf3a9",
-                              :email    "gmaskell2@msn.com",
-                              :password "model"}
+                              :email    "gang.wu@stjude.org",
+                              :password "WWtYFp4G6iRBsQVBS7MOu"
+                              :projects
+                              [#:project{:id #uuid "0b374321-b06a-4c97-8e6d-23d43f7d2445"}]}
                     #:account{:id       #uuid "61ae49a7-2922-4b69-8041-ab28663fea19",
                               :email    "alory1@wiley.com",
                               :password "installation"}
