@@ -90,11 +90,12 @@
               files (d/q query-all-files-in-a-project @conn project-id)]
           (log/spy files)
           (doseq [file files]
-            (let [link-path   (io/file run-pwd (:file/name file))
-                  target-path (file/get-file-path (:file/id file))]
-              (log/spy link-path)
-              (log/spy target-path)
-              (fs/sym-link link-path target-path))))
+            (let [path-in-pwd       (io/file run-pwd "input_files" (:file/name file))
+                  path-in-warehouse (file/get-file-path (:file/id file))]
+              (log/spy path-in-pwd)
+              (log/spy path-in-warehouse)
+              (fs/mkdirs (.getParentFile path-in-pwd))
+              (fs/sym-link path-in-pwd path-in-warehouse))))
 
         (d/transact conn [{:run/id     run-id
                            :run/status :initiated}])

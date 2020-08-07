@@ -1,0 +1,5 @@
+/bin/.Rhistory
+/work
+/results
+/.nextflow*
+/test-fastq

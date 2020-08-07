@@ -33,9 +33,11 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
-          (loop [chunks (lazy-cat (sh/execute "nextflow" "run"
+          (loop [chunks (lazy-cat (sh/execute "nextflow"
+                                              "-C" (.getPath (io/resource "scripts/idcov_nextflow/nextflow.config"))
+                                              "run"
                                               "-ansi-log" "false"
-                                              (.getPath (io/resource "scripts/test.nf"))
+                                              (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
                                               {:seq    true
                                                :buffer 4096
                                                :dir    pwd})
@@ -49,7 +51,8 @@
             (d/transact conn [{:run/id      run-id
                                :run/status  :running
                                :run/message stdout}])
-            (when (some? chunks)
+            (when (seq chunks)
+              ;; TODO: NEXT: nil pointer error??
               (recur (next chunks) (str stdout (first chunks)))))
           ;; ------------------------------------------------------------------------------
           ;; end work

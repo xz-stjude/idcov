@@ -147,7 +147,7 @@
               {:onClick (comp/get-state this :refresh)}
               (i :.refresh.icon)
               "Refresh")
-      (div :.ui.segment
+      (div :.ui.segment {:style {:overflow "auto"}}
            (h3 :.ui.header "Runs"
                (when (log/spy active?) (span :.sub.header {:style {:display "inline"}} " active ...")))
            (div :.ui.relaxed.divided.list {}
