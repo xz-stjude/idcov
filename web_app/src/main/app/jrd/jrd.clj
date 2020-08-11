@@ -34,10 +34,11 @@
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
           (loop [chunks (lazy-cat (sh/execute "nextflow"
-                                              "-C" (.getPath (io/resource "scripts/idcov_nextflow/nextflow.config"))
+                                              ;; "-C" (.getPath (io/resource "scripts/idcov_nextflow/nextflow.config"))
                                               "run"
                                               "-ansi-log" "false"
-                                              (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
+                                              ;; (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
+                                              (.getPath (io/resource "workflow/test.groovy"))
                                               {:seq    true
                                                :buffer 4096
                                                :dir    pwd})

@@ -1,0 +1,9 @@
+name: idcov-bioconda
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::bedtools
+  - bioconda::bwa
+  - bioconda::freebayes
+  - bioconda::samtools

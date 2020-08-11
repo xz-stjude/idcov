@@ -1,0 +1,7 @@
+name: idcov-r
+channels:
+  - r
+  - defaults
+dependencies:
+  - r::r
+  - r::r-tidyverse
