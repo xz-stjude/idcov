@@ -16,13 +16,11 @@
   [s]
   (if (seq s)
     (str "\n" (str/join "\n" s))
-    "--empty--"))
+    "--empty--"
+    )
+  )
 
 
-;; TODO: we really need RabbitMQ to support resuming after unexpected shutdowns
-;; TODO: the stdout and stderr are not reported eagerly, this might be due to the incorrect use of the (sh/execute) command
-;; TODO: there needs to be a way to kill/stop a running process
-;; TODO: there needs to be a timing mechanism
 (defn work
   []
   ;; (log/info "Trying to get the top-priority run ...")
