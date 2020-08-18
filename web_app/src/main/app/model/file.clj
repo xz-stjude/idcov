@@ -122,13 +122,13 @@
                          e)))))))
 
 (defn register-uploaded-file
-  [conn project-id file]
-  ;; file =
+  [conn project-id js-file]
+  ;; js-file =
   ;;     {:filename "sample01_R1.fastq"
   ;;      :content-type "xxx/xxx"
   ;;      :tempfile #object[java.io.File 0x5a7d2ed6 "/tmp/ring-multipart-443736812093768988.tmp"]
   ;;      :size 521212}
-  (register-file conn (:tempfile file)
+  (register-file conn (:tempfile js-file)
                  {:project-id  project-id
                   :link-method :move}))
 

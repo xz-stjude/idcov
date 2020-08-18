@@ -45,6 +45,9 @@
    {:db/ident       :run/message
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one}
+   {:db/ident       :run/output-files
+    :db/valueType   :db.type/ref ;file
+    :db/cardinality :db.cardinality/many}
    ;; {:db/ident       :run/workflow
    ;;  :db/valueType   :db.type/ref
    ;;  :db/cardinality :db.cardinality/one}
@@ -138,18 +141,12 @@
                               :projects
                               [#:project{:id    #uuid "0b374321-b06a-4c97-8e6d-23d43f7d2445",
                                          :name  "July batch"
-                                         :files [#:file{:id   #uuid "c7c64b69-8887-4db6-9e27-3cd5c7fe1cdb"
-                                                        :name "Rabeh-1_S7_R1.fastq.gz"
-                                                        :size 2319852480}
-                                                 #:file{:id   #uuid "c1da0e8c-3cf9-4154-9ee1-45e0d83dd039"
-                                                        :name "Rabeh-1_S7_R2.fastq.gz"
-                                                        :size 2752387258}
-                                                 #:file{:id   #uuid "59917fb7-fca3-4772-b45b-344aea01fdaf"
-                                                        :name "Rabeh-2_S8_R1.fastq.gz"
-                                                        :size 1298479424}
-                                                 #:file{:id   #uuid "6b751c08-a30e-4714-b1c6-72b1fbee5968"
-                                                        :name "Rabeh-2_S8_R2.fastq.gz"
-                                                        :size 1548732741}]}]}
+                                         :files [#:file{:id #uuid "b4e3683d-f89f-4f64-99ee-e2f78129a7d7", :name "Rabeh-1_S7_100000_R1.fastq.gz", :size 1412783}
+                                                 #:file{:id #uuid "96835c2d-7c32-4577-a1f0-937fb1bb12b9", :name "Rabeh-1_S7_100000_R2.fastq.gz", :size 1760922}
+                                                 #:file{:id #uuid "ed7feec9-6190-4448-80de-de6066a6fab2", :name "Rabeh-2_S8_100000_R1.fastq.gz", :size 1409915}
+                                                 #:file{:id #uuid "40515aa4-88a5-42b9-8e14-61b98abcfe2e", :name "Rabeh-2_S8_100000_R2.fastq.gz", :size 1849495}
+                                                 #:file{:id #uuid "13ca2048-13fe-455a-b250-73705c66e51b", :name "Rabeh-3_S9_100000_R1.fastq.gz", :size 1028470}
+                                                 #:file{:id #uuid "d3690369-986c-4d2e-8f40-845de6c7d53e", :name "Rabeh-3_S9_100000_R2.fastq.gz", :size 1392729}]}]}
                     #:account{:id       #uuid "16510c9e-d7f5-4ffe-a0d6-388b2efcf3a9",
                               :email    "gang.wu@stjude.org",
                               :password "WWtYFp4G6iRBsQVBS7MOu"

@@ -103,7 +103,7 @@
                      (comp/fragment " - " (a {:onClick #(retract-run id)} "retract")))
                    (when (contains? #{:retracted :initiation-failed :succeeded :failed} status)
                      (comp/fragment " - " (a {:onClick #(remove-run id)} "remove")))
-                   (when (= :succeeded)
+                   (when (= :succeeded status)
                      (comp/fragment " - " (a {:href (str "/run/" id "/results.tar.gz") :data-pushy-ignore true} "download results")))
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
