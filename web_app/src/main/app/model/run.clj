@@ -25,10 +25,13 @@
    ::pc/output [:run/id
                 :run/name
                 :run/status
-                :run/message]}
+                :run/message
+                {:run/output-files [:file/id]}
+                ]}
   (log/spy output)
   (d/pull @conn output [:run/id id]))
 
+;; TODO: rename this to "get-run-file" -- as it returns a file object rather than a string
 (defn get-run-path
   [run-id]
   (let [base-path  (:run-base-path config/config)
@@ -121,6 +124,22 @@
   (d/transact conn [[:db/cas [:run/id run-id] :run/status :initiated :retracted]])
   {:run/id run-id})
 
+(defmutation stop-run
+  [{:keys [conn ring/request]
+    :as   env}
+   {:keys [run-id]}]
+  {}
+  (d/transact conn [{:run/id     run-id
+                     :run/status :stopped}])
+  ;; (log/debug "DEBUG [stop-run]: " (d/q '[:find [(pull ?run [:run/id
+  ;;                                                           :run/status])]
+  ;;                                        :where
+  ;;                                        [?run :run/id run-id]
+  ;;                                        ]
+  ;;                                      @conn))
+
+  {:run/id run-id})
+
 (defmutation remove-run-from-account
   [{:keys [conn ring/request]
     :as   env}
@@ -132,4 +151,4 @@
     )
   {:account/id account-id})
 
-(def resolvers [run-project run retract-run remove-run-from-account])
+(def resolvers [run-project run stop-run retract-run remove-run-from-account])

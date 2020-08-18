@@ -8,13 +8,14 @@
    [com.fulcrologic.fulcro.networking.file-upload :as fu]
    [ring.middleware.defaults :refer [wrap-defaults]]
    [ring.middleware.gzip :refer [wrap-gzip]]
-   [ring.util.response :refer [response file-response resource-response]]
+   [ring.util.response :refer [response file-response resource-response header]]
    [ring.util.response :as resp]
    [hiccup.page :refer [html5]]
    [taoensso.timbre :as log]
    [app.model.file :as file]
    [app.model.run :as run]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [app.util :as util]))
 
 (def ^:private not-found-handler
   (fn [req]
@@ -88,15 +89,21 @@
       (-> (resp/response (index anti-forgery-token))
           (resp/content-type "text/html")))))
 
-;; TODO: this is specific to the current implementation of jrd. move it to somewhere else?
-(defn wrap-result-files [ring-handler]
+(defn wrap-download-file [ring-handler]
   (fn [{:keys [uri anti-forgery-token] :as req}]
-    (let [run-id (get (re-matches #"/run/(.*)/results.tar.gz" uri) 1)]
+    (let [file-match (re-matches #"/file/(.*)/download" uri)]
       (cond
-        (some? run-id)
-        (let [file (io/file (run/get-run-path run-id) "results.tar.gz")]
+        (some? file-match)
+        (let [file-id   (util/uuid (get file-match 1))
+              file      (file/get-file-path file-id)
+              file-meta (get (parser {} [{[:file/id file-id] [:file/id :file/name]}]) [:file/id file-id])
+              filename  (:file/name file-meta)]
+          (log/spy file-meta)
+          (log/spy filename)
+
           (log/info "Serving " file "...")
-          (-> (file-response (.getPath file))))
+          (-> (file-response (.getPath file))
+              (header "Content-Disposition" (str "attachment; filename=\"" filename "\""))))
 
         :else
         (ring-handler req)))))
@@ -107,7 +114,7 @@
         legal-origins   (get config :legal-origins #{"localhost"})]
     (-> ;; not-found-handler
       (wrap-html-routes identity)
-      wrap-result-files
+      wrap-download-file
       (wrap-api "/api")
       (fu/wrap-mutation-file-uploads {})
       fsm/wrap-transit-params

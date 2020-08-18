@@ -80,11 +80,9 @@
           ;; register all files in the pwd/output-files folder
           (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output-files")))
                 registered-files (map (fn [f] (file/register-file conn f)) output-files)]
-            (log/spy output-files)
-            (log/spy registered-files)
             (d/transact conn [{:run/id           run-id
                                :run/status       :succeeded
-                               :run/output-files registered-files}]))
+                               :run/output-files (vec registered-files)}]))
 
           (catch Exception e
             (log/spy e)

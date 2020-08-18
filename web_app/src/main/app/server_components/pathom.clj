@@ -101,6 +101,8 @@
 ;; 
 
 (comment
+  (parser {} [{[:file/id #uuid "10451da8-3de9-4578-8dcb-72beddc9410e"] [:file/id :file/size :file/name]}])
+
   (real-parser env (if trace?
                      (conj tx :com.wsscode.pathom/trace)
                      tx))

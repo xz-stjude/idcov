@@ -12,6 +12,7 @@
             [clojure.string :as str]
             [datahike.api :as d]))
 
+;; TODO: rename this to "get-file" -- as it returns a file object rather than a string
 (defn get-file-path
   "Get or generate the file path given file-id
   The first two chars of the uuid are extracted as an extra level of directory, e.g.,
@@ -57,6 +58,11 @@
   (util/uuid))
 
 
+(defn sanitize-filename
+  [filename]
+  (str/replace filename #"[^a-zA-Z0-9_.\-]" "_"))
+
+
 (defn register-file
   "Copies the file to the file warehouse, and then register it on the database.
 
@@ -77,9 +83,9 @@
                               project-id  nil}}]
    (let [file      (io/file path-to-file)
          filesize  (.length file) ; NOTE: .length follows sym-link
-         filename_ (if (string? filename)
-                     filename
-                     (.getName file))
+         filename_ (sanitize-filename (if (string? filename)
+                                        filename
+                                        (.getName file)))
          file-id   (generate-file-id file)
          dest-file (get-file-path file-id)]
      (log/spy filename_)

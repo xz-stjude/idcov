@@ -47,7 +47,8 @@
   (div :.item
        (i :.large.icon.file)
        (div :.content
-            (div :.header (str name " (" (filesize size) ")"))
+            (div :.header
+                 (a {:href (str "/file/" id "/download") :data-pushy-ignore true} (str name " (" (filesize size) ")")))
             (div :.description (str id))))
   )
 
@@ -77,10 +78,10 @@
 
 
 (defsc RunItem [this
-                {:run/keys [id name status message]}
-                {:keys [retract-run remove-run]}]
+                {:run/keys [id name status message output-files]}
+                {:keys [stop-run retract-run remove-run]}]
   {:ident         :run/id
-   :query         [:run/id :run/name :run/status :run/message]
+   :query         [:run/id :run/name :run/status :run/message {:run/output-files (comp/get-query File)}]
    :initial-state {}
    :css           [[:.retracted {:text-decoration "line-through"
                                  :opacity         0.3}]
@@ -90,6 +91,7 @@
         retracted-c (:retracted classes)
         succeeded-c (:succeeded classes)
         failed-c    (:failed classes)]
+    (log/spy output-files)
     (div :.item
          {:classes (filter some? [(when (= :retracted status) retracted-c)
                                   (when (= :failed status) failed-c)
@@ -101,14 +103,19 @@
                    " " (str status)
                    (when (= :initiated status)
                      (comp/fragment " - " (a {:onClick #(retract-run id)} "retract")))
-                   (when (contains? #{:retracted :initiation-failed :succeeded :failed} status)
+                   (when (= :running status)
+                     (comp/fragment " - " (a {:onClick #(stop-run id)} "stop")))
+                   (when (contains? #{:retracted :initiation-failed :succeeded :failed :stopped} status)
                      (comp/fragment " - " (a {:onClick #(remove-run id)} "remove")))
                    (when (= :succeeded status)
                      (comp/fragment " - " (a {:href (str "/run/" id "/results.tar.gz") :data-pushy-ignore true} "download results")))
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (when (seq message) (pre :.description (div :.ui.segment (str message))))
-              (div :.description (str id))))))
+              (div :.description (str id))
+              (when (= :succeeded status)
+                (div :.list
+                     (map ui-file output-files)))))))
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 
@@ -124,6 +131,10 @@
                      {:refresh        (fn [] (df/load! this [:account/id (:account/id (comp/props this))] SessionAccount))
                       :retract-run    (fn [run-id]
                                         (comp/transact! this [{(run/retract-run
+                                                                 {:run-id run-id})
+                                                               (comp/get-query RunItem)}]))
+                      :stop-run       (fn [run-id]
+                                        (comp/transact! this [{(run/stop-run
                                                                  {:run-id run-id})
                                                                (comp/get-query RunItem)}]))
                       :remove-run     (fn [run-id]
@@ -152,7 +163,7 @@
                (when (log/spy active?) (span :.sub.header {:style {:display "inline"}} " active ...")))
            (div :.ui.relaxed.divided.list {}
                 (for [run runs]
-                  (ui-run-item run (select-keys (comp/get-state this) [:retract-run :remove-run])))))
+                  (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
       (div :.ui.segment
            (h3 :.ui.header "Projects")
            (div :.ui.relaxed.divided.list {}

@@ -14,5 +14,8 @@
 (defmutation retract-run [_]
   (remote [_] true))
 
+(defmutation stop-run [_]
+  (remote [_] true))
+
 (defmutation remove-run-from-account [_]
   (remote [_] true))
