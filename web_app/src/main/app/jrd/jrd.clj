@@ -44,21 +44,27 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
-          (loop [chunks (lazy-cat (sh/execute "nextflow"
-                                              "-C" (.getPath (io/resource "workflow/main.config"))
-                                              "run"
-                                              "-ansi-log" "false"
-                                              ;; (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
-                                              (.getPath (io/resource "workflow/main.groovy"))
-                                              {:seq    true
-                                               :buffer 4096
-                                               :dir    pwd})
-                                  (sh/execute "tar" "-zcv" "--dereference"
-                                              "-f" "results.tar.gz"
-                                              "results"
-                                              {:seq    true
-                                               :buffer 4096
-                                               :dir    pwd}))
+          (loop [chunks (lazy-cat
+                          (sh/execute (.getPath (io/resource "workflow/test.sh"))
+                                      {:seq    true
+                                       :buffer 4096
+                                       :dir    pwd})
+                          ;; (sh/execute "nextflow"
+                          ;;             "-C" (.getPath (io/resource "workflow/main.config"))
+                          ;;             "run"
+                          ;;             "-ansi-log" "false"
+                          ;;             ;; (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
+                          ;;             (.getPath (io/resource "workflow/main.groovy"))
+                          ;;             {:seq    true
+                          ;;              :buffer 4096
+                          ;;              :dir    pwd})
+                          ;; (sh/execute "tar" "-zcv" "--dereference"
+                          ;;             "-f" "results.tar.gz"
+                          ;;             "results"
+                          ;;             {:seq    true
+                          ;;              :buffer 4096
+                          ;;              :dir    pwd})
+                          )
                  stdout ""]
             (d/transact conn [{:run/id      run-id
                                :run/status  :running
@@ -69,8 +75,16 @@
           ;; ------------------------------------------------------------------------------
           ;; end work
 
-          (d/transact conn [{:run/id     run-id
-                             :run/status :succeeded}])
+          ;; TODO: Throw an error if necessary output-files do not exist
+
+          ;; register all files in the pwd/output-files folder
+          (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output-files")))
+                registered-files (map (fn [f] (file/register-file conn f)) output-files)]
+            (log/spy output-files)
+            (log/spy registered-files)
+            (d/transact conn [{:run/id           run-id
+                               :run/status       :succeeded
+                               :run/output-files registered-files}]))
 
           (catch Exception e
             (log/spy e)

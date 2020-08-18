@@ -111,6 +111,10 @@
          (d/transact conn [{:project/id    project-id
                             :project/files [{:file/id file-id}]}]))
 
+       {:file/id   file-id
+        :file/name filename_
+        :file/size filesize}
+
        (catch Exception e
          (throw (ex-info "Error when trying to register a file"
                          {:filename     filename
