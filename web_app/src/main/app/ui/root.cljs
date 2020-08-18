@@ -45,12 +45,14 @@
    :query         [:file/id :file/name :file/size]
    :initial-state {}}
   (div :.item
-       (i :.large.icon.file)
+       (cond
+         (re-matches #"^.*\.fastq(\.gz)?$" name) (i :.large.icon.dna)
+         (re-matches #"^.*\.txt$" name)          (i :.large.icon.file)
+         :else                                   (i :.large.icon.file))
        (div :.content
             (div :.header
                  (a {:href (str "/file/" id "/download") :data-pushy-ignore true} (str name " (" (filesize size) ")")))
-            (div :.description (str id))))
-  )
+            (div :.description (str id)))))
 
 (def ui-file (comp/factory File {:keyfn :file/id}))
 
