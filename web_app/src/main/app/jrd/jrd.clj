@@ -1,16 +1,21 @@
 (ns app.jrd.jrd
-  (:require [mount.core :as mount :refer [defstate]]
-            [app.model.mock-database :refer [conn]]
-            [datahike.api :as d]
-            [clojure.java.io :as io]
-            [clojure.core.async :as async :refer [<! >! <!! >!!]]
-            [taoensso.timbre :as log]
-            [clojure.java.shell :as shell]
-            [app.model.file :as file]
+  (:require [taoensso.timbre    :as log]
+            [mount.core         :as mount :refer [defstate]]
+            [me.raynes.conch    :as sh :refer [programs with-programs let-programs]]
+            [langohr.queue      :as lq]
+            [langohr.core       :as rmq]
+            [langohr.consumers  :as lc]
+            [langohr.channel    :as lch]
+            [langohr.basic      :as lb]
             [io.aviso.exception :as aviso-ex]
-            [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
-            [app.model.run :as run]
-            [clojure.string :as str]))
+            [datahike.api       :as d]
+            [clojure.string     :as str]
+            [clojure.java.shell :as shell]
+            [clojure.java.io    :as io]
+            [clojure.core.async :as async :refer [<! >! <!! >!!]]
+            [app.model.run      :as run]
+            [app.model.mock-database :refer [conn]]
+            [app.model.file     :as file]))
 
 (defn lazy-output->str
   [s]
@@ -70,7 +75,6 @@
                                :run/status  :running
                                :run/message stdout}])
             (when (seq chunks)
-              ;; TODO: NEXT: nil pointer error??
               (recur (next chunks) (str stdout (first chunks)))))
           ;; ------------------------------------------------------------------------------
           ;; end work
@@ -135,4 +139,131 @@
 
   (log/merge-config! {:ns-blacklist []})
 
+  (def ^{:const true}
+    default-exchange-name "")
+
+  (defn message-handler
+    [ch {:keys [content-type delivery-tag type] :as meta} ^bytes payload]
+    (log/info "message-handler initiated")
+    (Thread/sleep (rand-int 5))
+    (log/info "message-handler work finished")
+    (lb/ack ch delivery-tag)
+    (log/info "message-handler ack'ed")
+    )
+
+  (def c (rmq/connect))
+  (def ch (lch/open c))
+  (def qname "langohr.examples.hello-world")
+
+  (println (format "[main] Connected. Channel id: %d" (.getChannelNumber ch)))
+
+  (lq/declare ch qname {:exclusive false :auto-delete true})
+
+  (lc/subscribe ch qname message-handler {:auto-ack true})
+
+  (lb/publish ch default-exchange-name qname "Hello!" {:content-type "text/plain" :type "greetings.hi"})
+
+  (Thread/sleep 2000)
+
+  ;; {
+  ;;  :delivery-tag 1
+  ;;  :redelivery?  false
+  ;;  :exchange     ""
+  ;;  :routing-key  "langohr.examples.hello-world"
+
+  ;;  :app-id           nil
+  ;;  :cluster-id       nil
+  ;;  :content-encoding nil
+  ;;  :content-type     "text/plain"
+  ;;  :correlation-id   nil
+  ;;  :delivery-mode    1
+  ;;  :expiration       nil
+  ;;  :headers          nil
+  ;;  :message-id       nil
+  ;;  :persistent?      false
+  ;;  :priority         nil
+  ;;  :reply-to         nil
+  ;;  :timestamp        nil
+  ;;  :type             "greetings.hi"
+  ;;  :user-id          nil
+  ;;  }
+
+  ;; {
+  ;;  :delivery-tag 2
+  ;;  :redelivery?  false
+  ;;  :exchange     ""
+  ;;  :routing-key  "langohr.examples.hello-world"
+
+  ;;  :app-id           nil
+  ;;  :cluster-id       nil
+  ;;  :content-encoding nil
+  ;;  :content-type     "text/plain"
+  ;;  :correlation-id   nil
+  ;;  :delivery-mode    1
+  ;;  :expiration       nil
+  ;;  :headers          nil
+  ;;  :message-id       nil
+  ;;  :persistent?      false
+  ;;  :priority         nil
+  ;;  :reply-to         nil
+  ;;  :timestamp        nil
+  ;;  :type             "greetings.hi"
+  ;;  :user-id          nil
+  ;;  }
+
+  (println "[main] Disconnecting...")
+
+  (rmq/close ch)
+
+  (rmq/close conn)
+
+  (defn msg-handler-factory
+    [i n]
+    (fn msg-handler
+      [ch {:keys [content-type delivery-tag type] :as meta} ^bytes payload]
+      (async/go
+        (let [handler-signature (apply str (concat (repeat i \space) [i] (repeat (dec (- n i)) \space)))
+              delay-secs        (rand-int 5)]
+          (log/info (format "%s obtained a job (expected to finish in %d seconds)" handler-signature delay-secs))
+          (Thread/sleep (* 1000 delay-secs))
+          (log/info (format "%s job finished in %d seconds" handler-signature delay-secs))
+          (lb/ack ch delivery-tag)))))
+
+  (let [c     (rmq/connect)
+        ch    (lch/open c)
+        qname "org.stjude.cheetah.jobs"]
+    (println (format "[main] Connected. Channel id: %d" (.getChannelNumber ch)))
+    (lq/declare ch qname {:exclusive false :auto-delete true})
+    (lb/qos ch 1)
+    (doseq [i (range 10)]
+      (lc/subscribe ch qname (msg-handler-factory i 10) {:auto-ack false})))
+
+  (doseq [i (range 20)]
+    (lb/publish ch default-exchange-name "org.stjude.cheetah.jobs" "Hello!" {:content-type "text/plain" :type "greetings.hi"}))
+
   )
+
+
+;; DeliverCallback
+;;   `- Delivery
+;;        `- getEnvelope -> Envelope
+;;                            `- getDeliveryTag -> long
+;;                            `- isRedeliver -> boolean
+;;                            `- getExchange -> String
+;;                            `- getRoutingKey -> String
+;;                            `- [ toString -> String ]
+;;        `- getProperties -> AMQP.BasicProperties
+;;                              `- getContentType -> String
+;;                              `- getContentEncoding -> String
+;;                              `- getHeaders -> Map<String, Object>
+;;                              `- getDeliveryMode -> Integer
+;;                              `- getPriority -> Integer
+;;                              `- getCorrelationId -> String
+;;                              `- getReplyTo -> String
+;;                              `- getExpiration -> String
+;;                              `- getMessageId -> String
+;;                              `- getTimestamp -> Date
+;;                              `- getType -> String
+;;                              `- getUserId -> String
+;;                              `- getAppId -> String
+;;        `- getBody -> byte[]

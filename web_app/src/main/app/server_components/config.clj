@@ -15,6 +15,7 @@
       ;; " "
       ;; (force hostname_)        " "
       (first (name level))  " "
+      (prn level)
       "[" (or ?ns-str ?file "?") ":" (or ?line "?") "] - "
       (force msg_)
       (when-let [err ?err]

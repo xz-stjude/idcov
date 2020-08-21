@@ -221,13 +221,11 @@
 
   (d/q '[:find [(pull ?run [:run/id
                             :run/status
-                            :run/message
                             {:run/output-files [:file/id :file/name :file/size]}])]
          :where
          [?run :run/id #uuid "0669e62f-96f4-4885-908d-34e894ac8685"]
          ]
        @conn)
-
   ;; nested query to get the top items
   (d/q '[:find ?project-id ?txInstant
          ;; :keys #_project-id creation-inst

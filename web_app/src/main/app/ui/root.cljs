@@ -73,8 +73,7 @@
                  " - " (a {:onClick #(run-project id)} "run"))
             (div :.description (str id))
             (div :.list
-                 (map ui-file files)))
-       ))
+                 (map ui-file files)))))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
@@ -109,8 +108,7 @@
                      (comp/fragment " - " (a {:onClick #(stop-run id)} "stop")))
                    (when (contains? #{:retracted :initiation-failed :succeeded :failed :stopped} status)
                      (comp/fragment " - " (a {:onClick #(remove-run id)} "remove")))
-                   (when (= :succeeded status)
-                     (comp/fragment " - " (a {:href (str "/run/" id "/results.tar.gz") :data-pushy-ignore true} "download results")))
+                   ;; TODO: Have a function to download all files as a zipped archive
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (when (seq message) (pre :.description (div :.ui.segment (str message))))
