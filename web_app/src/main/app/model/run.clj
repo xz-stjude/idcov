@@ -16,6 +16,15 @@
    [clojure.core.async :as async])
   (:import [java.io FileNotFoundException]))
 
+;; TODO: rename this to "get-run-file" -- as it returns a file object rather than a string
+(defn get-run-path
+  [run-id]
+  (let [base-path  (:run-base-path config/config)
+        run-id-str (str run-id)
+        part-1     (subs run-id-str 0 2)
+        part-2     (subs run-id-str 2)]
+    (io/file base-path part-1 part-2)))
+
 
 (defresolver run [{{output ::pc/output} ::pc/resolver-data
                    :keys                [conn]
@@ -31,14 +40,31 @@
   (log/spy output)
   (d/pull @conn output [:run/id id]))
 
-;; TODO: rename this to "get-run-file" -- as it returns a file object rather than a string
-(defn get-run-path
-  [run-id]
-  (let [base-path  (:run-base-path config/config)
-        run-id-str (str run-id)
-        part-1     (subs run-id-str 0 2)
-        part-2     (subs run-id-str 2)]
-    (io/file base-path part-1 part-2)))
+(defresolver run-stdout [{{output ::pc/output} ::pc/resolver-data
+                          :keys                [conn]
+                          :as                  env}
+                         {:run/keys [id]}]
+  {::pc/input  #{:run/id}
+   ::pc/output [:run/stdout]}
+  (try
+    {:run/stdout (let [pwd (get-run-path id)]
+                   (slurp (io/file pwd "stdout")))}
+    (catch Exception e
+      {:run/stdout ""}))
+  )
+
+(defresolver run-stderr [{{output ::pc/output} ::pc/resolver-data
+                          :keys                [conn]
+                          :as                  env}
+                         {:run/keys [id]}]
+  {::pc/input  #{:run/id}
+   ::pc/output [:run/stderr]}
+  (try
+    {:run/stderr (let [pwd (get-run-path id)]
+                   (slurp (io/file pwd "stderr")))}
+    (catch Exception e
+      {:run/stderr ""}))
+  )
 
 ;; Create a run under the account `account-id`. Run the default workflow on all qualified files in project `project-id`.
 ;;
@@ -151,4 +177,4 @@
     )
   {:account/id account-id})
 
-(def resolvers [run-project run stop-run retract-run remove-run-from-account])
+(def resolvers [run-project run stop-run retract-run remove-run-from-account run-stderr run-stdout])

@@ -49,6 +49,7 @@
       (if file-exists?
         (d/transact conn [{:file/id   file-id
                            :file/size (.length file)}])
+        ;; TODO: NEXT: make :file/size always calculated from the file
         (d/transact conn [{:file/id   file-id
                            :file/size nil}])))))
 
@@ -139,7 +140,8 @@
   ;;      :tempfile #object[java.io.File 0x5a7d2ed6 "/tmp/ring-multipart-443736812093768988.tmp"]
   ;;      :size 521212}
   (register-file conn (:tempfile js-file)
-                 {:project-id  project-id
+                 {:filename    (:filename js-file)
+                  :project-id  project-id
                   :link-method :move}))
 
 (def resolvers [file-r])

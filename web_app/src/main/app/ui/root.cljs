@@ -19,7 +19,6 @@
    [com.fulcrologic.fulcro.ui-state-machines :as uism]
    [taoensso.timbre :as log]
    ["filesize" :as filesize]
-
    [com.fulcrologic.fulcro.data-fetch :as df]))
 
 (declare
@@ -79,10 +78,12 @@
 
 
 (defsc RunItem [this
-                {:run/keys [id name status message output-files]}
+                {:run/keys [id name status message output-files stdout stderr]}
                 {:keys [stop-run retract-run remove-run]}]
   {:ident         :run/id
-   :query         [:run/id :run/name :run/status :run/message {:run/output-files (comp/get-query File)}]
+   :query         [:run/id :run/name :run/status
+                   :run/message :run/stdout :run/stderr
+                   {:run/output-files (comp/get-query File)}]
    :initial-state {}
    :css           [[:.retracted {:text-decoration "line-through"
                                  :opacity         0.3}]
@@ -112,6 +113,8 @@
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (when (seq message) (pre :.description (div :.ui.segment (str message))))
+              (when (seq stdout) (pre :.description (div :.ui.segment (str stdout))))
+              (when (seq stderr) (pre :.description (div :.ui.segment (str stderr))))
               (div :.description (str id))
               (when (= :succeeded status)
                 (div :.list

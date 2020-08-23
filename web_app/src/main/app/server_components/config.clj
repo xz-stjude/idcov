@@ -14,8 +14,12 @@
       ;; (force timestamp_)
       ;; " "
       ;; (force hostname_)        " "
-      (first (name level))  " "
-      (prn level)
+      (get {:debug "∙"
+            :info  "│"
+            :warn  "┽"
+            :error "╳"
+            :fatal "█"}
+           level)  " "
       "[" (or ?ns-str ?file "?") ":" (or ?line "?") "] - "
       (force msg_)
       (when-let [err ?err]

@@ -2,6 +2,7 @@
   (:require [taoensso.timbre    :as log]
             [mount.core         :as mount :refer [defstate]]
             [me.raynes.conch    :as sh :refer [programs with-programs let-programs]]
+            [me.raynes.conch.low-level :as cl]
             [langohr.queue      :as lq]
             [langohr.core       :as rmq]
             [langohr.consumers  :as lc]
@@ -23,10 +24,26 @@
     (str "\n" (str/join "\n" s))
     "--empty--"))
 
-
 ;; TODO: we really need RabbitMQ to support resuming after unexpected shutdowns
+
+;; But here is the deal. RabbitMQ by itself cannot fully solve stopping and
+;; resuming of a job. To support resuming, we still need a database for storing
+;; the status of each job, and each worker would still need to check this
+;; database to see if a job has already been canceled before they proceed to
+;; start the job.
+
+;; What RabbitMQ solves is really just the subscribing so that we don't have to
+;; do probing.
+
+;; Even if we use RabbitMQ, and there's an unexpected server shutdown, when we
+;; restart the server again, we would still need to do a sweeping of the jobs
+;; marked as "running".
+
+
 ;; TODO: the stdout and stderr are not reported eagerly, this might be due to the incorrect use of the (sh/execute) command
+
 ;; TODO: there needs to be a way to kill/stop a running process
+
 ;; TODO: there needs to be a timing mechanism
 (defn work
   []
@@ -49,33 +66,10 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
-          (loop [chunks (lazy-cat
-                          (sh/execute (.getPath (io/resource "workflow/test.sh"))
-                                      {:seq    true
-                                       :buffer 4096
-                                       :dir    pwd})
-                          ;; (sh/execute "nextflow"
-                          ;;             "-C" (.getPath (io/resource "workflow/main.config"))
-                          ;;             "run"
-                          ;;             "-ansi-log" "false"
-                          ;;             ;; (.getPath (io/resource "scripts/idcov_nextflow/test.nf"))
-                          ;;             (.getPath (io/resource "workflow/main.groovy"))
-                          ;;             {:seq    true
-                          ;;              :buffer 4096
-                          ;;              :dir    pwd})
-                          ;; (sh/execute "tar" "-zcv" "--dereference"
-                          ;;             "-f" "results.tar.gz"
-                          ;;             "results"
-                          ;;             {:seq    true
-                          ;;              :buffer 4096
-                          ;;              :dir    pwd})
-                          )
-                 stdout ""]
-            (d/transact conn [{:run/id      run-id
-                               :run/status  :running
-                               :run/message stdout}])
-            (when (seq chunks)
-              (recur (next chunks) (str stdout (first chunks)))))
+          (sh/execute (.getPath (io/resource "workflow/test.sh"))
+                      {:out (io/file pwd "stdout")
+                       :err (io/file pwd "stderr")
+                       :dir pwd})
           ;; ------------------------------------------------------------------------------
           ;; end work
 
@@ -124,6 +118,9 @@
            exit-ch)
   :stop (async/put! jrd true))
 
+
+;; 
+
 (comment
   (mount/stop #'jrd)
 
@@ -164,6 +161,23 @@
   (lb/publish ch default-exchange-name qname "Hello!" {:content-type "text/plain" :type "greetings.hi"})
 
   (Thread/sleep 2000)
+
+  (def p (cl/proc (.getPath (io/resource "workflow/test_echoes.sh"))))
+  (cl/stream-to p :out (io/file "/tmp/asdf"))
+
+
+  (do
+    (log/info ".isAlive() =" (.isAlive (:process p)))
+    (log/info "stdout =\n" (cl/stream-to-string p :out)))
+
+  (do
+    (def pb (ProcessBuilder. ["echo" "Hello!"]))
+
+    (def p (.start pb))
+    (-> p .getInputStream .read)
+    (-> p .getInputStream .available)
+    )
+
 
   ;; {
   ;;  :delivery-tag 1
@@ -217,29 +231,47 @@
 
   (rmq/close conn)
 
-  (defn msg-handler-factory
-    [i n]
-    (fn msg-handler
-      [ch {:keys [content-type delivery-tag type] :as meta} ^bytes payload]
-      (async/go
-        (let [handler-signature (apply str (concat (repeat i \space) [i] (repeat (dec (- n i)) \space)))
-              delay-secs        (rand-int 5)]
-          (log/info (format "%s obtained a job (expected to finish in %d seconds)" handler-signature delay-secs))
-          (Thread/sleep (* 1000 delay-secs))
-          (log/info (format "%s job finished in %d seconds" handler-signature delay-secs))
-          (lb/ack ch delivery-tag)))))
+  (do
+    (defn msg-handler-factory
+      [i n]
+      (fn msg-handler
+        [ch {:keys [content-type delivery-tag type] :as meta} ^bytes payload]
+        (async/go
+          (let [handler-signature (apply str (concat (repeat i \space) [i] (repeat (dec (- n i)) \space)))
+                delay-secs        (rand-int 5)]
+            (log/info (format "%s obtained a job (expected to finish in %d seconds)" handler-signature delay-secs))
+            (Thread/sleep (* 1000 delay-secs))
+            (log/info (format "%s job finished in %d seconds" handler-signature delay-secs))
+            (lb/ack ch delivery-tag)))))
 
-  (let [c     (rmq/connect)
-        ch    (lch/open c)
-        qname "org.stjude.cheetah.jobs"]
-    (println (format "[main] Connected. Channel id: %d" (.getChannelNumber ch)))
-    (lq/declare ch qname {:exclusive false :auto-delete true})
-    (lb/qos ch 1)
+    (def qname "idcov.jobs")
+    (def rmq-conn (rmq/connect))
+    (def ch-pub (lch/open rmq-conn))
+    (def ch-sub (lch/open rmq-conn))
+    )
+
+  (do
+    (println (format "[consumers] Connected. Channel id: %d" (.getChannelNumber ch-sub)))
+    (lq/declare ch-sub qname {:exclusive false :auto-delete true})
+    (lb/qos ch-sub 0)
+
+    ;; This part will appear in this file (jrd). Instead of listening to a database, JRDs now subscribe to the idcov.jobs queue in the RabbitMQ server
     (doseq [i (range 10)]
-      (lc/subscribe ch qname (msg-handler-factory i 10) {:auto-ack false})))
+      (lc/subscribe ch-sub qname (msg-handler-factory i 10) {:auto-ack false}))
 
-  (doseq [i (range 20)]
-    (lb/publish ch default-exchange-name "org.stjude.cheetah.jobs" "Hello!" {:content-type "text/plain" :type "greetings.hi"}))
+    (println (format "[producer] Connected. Channel id: %d" (.getChannelNumber ch-pub)))
+    (lq/declare ch-pub qname {:exclusive false :auto-delete true})
+    (lb/qos ch-pub 0)
+
+    ;; This part will appear at the "POST /submit-jobs" handler
+    (doseq [i (range 20)]
+      (lb/publish ch-pub "" qname "Hello!" {:content-type "text/plain" :type "greetings.hi"}))
+    )
+
+  (do
+    (rmq/close ch-pub)
+    (rmq/close ch-sub)
+    (rmq/close rmq-conn))
 
   )
 
