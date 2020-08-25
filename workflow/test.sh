@@ -3,7 +3,7 @@
 echo "Start!"
 
 echo "mkdir output-files"
-sleep 1
+sleep 20
 mkdir output-files
 
 echo "conda -V >> output-files/info.txt"
