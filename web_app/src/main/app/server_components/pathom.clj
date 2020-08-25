@@ -88,8 +88,6 @@
         ;; Understand that this makes the network responses much larger and should not be used in production.
         trace?      (not (nil? (System/getProperty "trace")))]
     (fn wrapped-parser [env tx]
-      (log/spy (keys env))
-      (log/spy tx)
       ;; [{:app.model.session/current-session [:session/valid? :account/name]}]
       (async/<!! (real-parser env (if trace?
                                     (conj tx :com.wsscode.pathom/trace)

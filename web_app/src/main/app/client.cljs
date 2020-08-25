@@ -29,19 +29,20 @@
   (dr/initialize! SPA)
   (routing/start!)
   (log/info "Starting session machine.")
-  (uism/begin! SPA session/session-machine ::session/session
+  (uism/begin! SPA session/sm ::session/session
                {:actor/login-form      root/Login
                 :actor/current-session root/Session})
   (app/mount! SPA root/Root "app" {:initialize-state? false})
   )
 
+;; 
 
 (comment
   (inspect/app-started! SPA)
   (app/mounted? SPA)
   (app/set-root! SPA root/Root {:initialize-state? true})
   (uism/begin! SPA session/session-machine ::session/session
-               {:actor/login-form root/Login
+               {:actor/login-form      root/Login
                 :actor/current-session root/Session})
 
   (reset! (::app/state-atom SPA) {})

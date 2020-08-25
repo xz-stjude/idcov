@@ -66,10 +66,9 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
-          (sh/execute (.getPath (io/resource "workflow/test.sh"))
-                      {:out (io/file pwd "stdout")
-                       :err (io/file pwd "stderr")
-                       :dir pwd})
+          (let [p (cl/proc (.getPath (io/resource "workflow/test.sh")) :dir pwd)]
+            (cl/stream-to p :out (io/file pwd "stdout"))
+            (cl/stream-to p :err (io/file pwd "stderr")))
           ;; ------------------------------------------------------------------------------
           ;; end work
 

@@ -34,8 +34,6 @@
    ::pc/output [:file/id
                 :file/name
                 :file/size]}
-  (log/spy output)
-  (log/spy (::pc/resolver-data env))
   (d/pull @conn output [:file/id id]))
 
 (defn refresh-file-cache

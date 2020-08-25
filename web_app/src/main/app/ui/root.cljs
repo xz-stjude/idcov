@@ -4,13 +4,14 @@
    [app.model.session :as session]
    [app.model.run :as run]
    [app.routing :as routing]
+   [app.model.auto-refresh :as auto-refresh]
    [clojure.string :as str]
    [com.fulcrologic.fulcro.algorithms.form-state :as fs]
    [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]
    [com.fulcrologic.fulcro.application :as app]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro-css.css :as css]
-   [com.fulcrologic.fulcro.dom :as dom :refer [a b i img button div h2 h3 input label p span form code pre]]
+   [com.fulcrologic.fulcro.dom :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre]]
    [com.fulcrologic.fulcro.dom.events :as evt]
    [com.fulcrologic.fulcro.dom.html-entities :as ent]
    [com.fulcrologic.fulcro.mutations :as m]
@@ -19,7 +20,8 @@
    [com.fulcrologic.fulcro.ui-state-machines :as uism]
    [taoensso.timbre :as log]
    ["filesize" :as filesize]
-   [com.fulcrologic.fulcro.data-fetch :as df]))
+   [com.fulcrologic.fulcro.data-fetch :as df]
+   [clojure.core.async :as async]))
 
 (declare
   SessionAccount ui-session-account
@@ -89,16 +91,13 @@
                                  :opacity         0.3}]
                    [:.failed {:color "red"}]
                    [:.succeeded {:color "green"}]]}
-  (let [classes     (css/get-classnames RunItem)
-        retracted-c (:retracted classes)
-        succeeded-c (:succeeded classes)
-        failed-c    (:failed classes)]
+  (let [classes (css/get-classnames RunItem)]
     (log/spy output-files)
     (div :.item
-         {:classes (filter some? [(when (= :retracted status) retracted-c)
-                                  (when (= :failed status) failed-c)
-                                  (when (= :succeeded status) succeeded-c)])}
-         (i :.large.icon.plane)
+         (i :.large.icon.plane
+            {:classes (filter some? [(when (= :retracted status) (:retracted classes))
+                                     (when (= :failed status) (:failed classes))
+                                     (when (= :succeeded status) (:succeeded classes))])})
          (div :.content
               (div :.header
                    name
@@ -112,9 +111,18 @@
                    ;; TODO: Have a function to download all files as a zipped archive
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
-              (when (seq message) (pre :.description (div :.ui.segment (str message))))
-              (when (seq stdout) (pre :.description (div :.ui.segment (str stdout))))
-              (when (seq stderr) (pre :.description (div :.ui.segment (str stderr))))
+              (when (seq message)
+                (div :.ui.segment
+                     (h4 :.ui.header "Message")
+                     (pre (str message))))
+              (when (seq stdout)
+                (div :.ui.segment
+                     (h4 :.ui.header "Worker stdout")
+                     (pre (str stdout))))
+              (when (seq stderr)
+                (div :.ui.segment
+                     (h4 :.ui.header "Worker stderr")
+                     (pre (str stderr))))
               (div :.description (str id))
               (when (= :succeeded status)
                 (div :.list
@@ -122,17 +130,14 @@
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 
-
 (defsc SessionAccount [this {:account/keys [projects runs]}]
   {:ident          :account/id
    :query          [:account/id
                     :account/email
                     {:account/projects (comp/get-query ProjectItem)}
                     {:account/runs (comp/get-query RunItem)}]
-   :initial-state  {}
    :initLocalState (fn [this props]
-                     {:refresh        (fn [] (df/load! this [:account/id (:account/id (comp/props this))] SessionAccount))
-                      :retract-run    (fn [run-id]
+                     {:retract-run    (fn [run-id]
                                         (comp/transact! this [{(run/retract-run
                                                                  {:run-id run-id})
                                                                (comp/get-query RunItem)}]))
@@ -155,23 +160,17 @@
                                                                  {:project-id project-id
                                                                   :account-id (:account/id (comp/props this))})
                                                                (comp/get-query SessionAccount)}]))})}
-  (let [active? (some #(contains? #{:initiating :initiated :running} (:run/status %)) (log/spy runs))]
-    (div
-      (button :.ui.compact.labeled.icon.button
-              {:onClick (comp/get-state this :refresh)}
-              (i :.refresh.icon)
-              "Refresh")
-      (div :.ui.segment {:style {:overflow "auto"}}
-           (h3 :.ui.header "Runs"
-               (when (log/spy active?) (span :.sub.header {:style {:display "inline"}} " active ...")))
-           (div :.ui.relaxed.divided.list {}
-                (for [run runs]
-                  (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
-      (div :.ui.segment
-           (h3 :.ui.header "Projects")
-           (div :.ui.relaxed.divided.list {}
-                (for [project projects]
-                  (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))))))
+  (div
+    (div :.ui.segment {:style {:overflow "auto"}}
+         (h3 :.ui.header "Runs")
+         (div :.ui.relaxed.divided.list {}
+              (for [run runs]
+                (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
+    (div :.ui.segment
+         (h3 :.ui.header "Projects")
+         (div :.ui.relaxed.divided.list {}
+              (for [project projects]
+                (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project])))))))
 
 (def ui-session-account (comp/factory SessionAccount))
 
@@ -238,20 +237,19 @@
                     "Sign Up")))))
 
 (defsc Login [this {:account/keys [email]
-                    :ui/keys      [error open?]
+                    :ui/keys      [error open? state loading?]
                     :as           props}]
   {:ident (fn [] [:component/id :login])
    :query [:ui/open?
            :ui/error
+           :ui/state
+           :ui/loading?
 
            :account/email
 
-           {[:component/id :session] (comp/get-query Session)}
-
-           ;; The below does not send in anything but declares that if the data under this ident
-           ;; changes, then the component should be re-rendered.
-           [::uism/asm-id ::session/session]]
+           {[:component/id :session] (comp/get-query Session)}]
    :initial-state {:ui/error      ""
+                   :ui/state      :initial
                    :account/email ""}
    :css           [[:.floating-menu {:position "absolute !important"
                                      :z-index  1000
@@ -259,9 +257,7 @@
                                      :right    "0px"
                                      :top      "50px"}]]}
   ;; (print "props =" props)
-  (let [;; Note that this "current-state" is not sent in as a prop
-        current-state           (uism/get-active-state this ::session/session)
-        session                 (get props [:component/id :session])
+  (let [session                 (get props [:component/id :session])
         account                 (:session/account session)
         account-id              (:account/id account)
         account-email           (:account/email account)
@@ -269,50 +265,50 @@
         password                (or (comp/get-state this :password) "")] ; c.l. state for security
     (div
       (div :.right.menu
-           (case current-state
-             (nil :initial)            (span :.item "Initializing ...")
-             :state/logged-in          (button :.item
-                                               {:onClick #(uism/trigger! this ::session/session :event/logout)}
-                                               (span :.ui.image.label (img {:src "/avataaars.svg"}) (str account-email)) ent/nbsp "Log out")
-             (:state/logged-out
-              :state/checking-session) (div :.item {:style   {:position "relative"}
-                                                    :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
-                                            "Login"
-                                            (when open?
-                                              (div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
-                                                                                                  ;; Stop bubbling (would trigger the menu toggle)
-                                                                                                  (evt/stop-propagation! e))
-                                                                                       :classes [floating-menu]}
-                                                   (h3 :.ui.header "Login")
-                                                   (form :.ui.form {:classes [(when (seq error) "error")]}
-                                                         (field {:label    "Email"
-                                                                 :value    email
-                                                                 :onChange #(m/set-string! this :account/email :event %)})
-                                                         (field {:label    "Password"
-                                                                 :type     "password"
-                                                                 :value    password
-                                                                 :onChange #(comp/set-state! this {:password (evt/target-value %)})})
-                                                         (div :.ui.error.message error)
-                                                         (div :.ui.field
-                                                              (button :.ui.button
-                                                                      {:type    "button"
-                                                                       :onClick (fn [] (uism/trigger! this ::session/session :event/login-by-email
-                                                                                                      {:email    email
-                                                                                                       :password password}))
-                                                                       :classes [(when (= :state/checking-session current-state) "loading")]} "Login"))
-                                                         (div :.ui.message
-                                                              (p "Don't have an account?")
-                                                              (a {:onClick (fn []
-                                                                             (uism/trigger! this ::session/session :event/toggle-modal {})
-                                                                             (routing/route-to! "/signup"))}
-                                                                 "Please sign up!")))))))))))
+           (case state
+             :initial    (span :.item "Initializing ...")
+             :logged-in  (button :.item
+                                 {:onClick #(uism/trigger! this ::session/session :event/logout)}
+                                 (span :.ui.image.label (img {:src "/avataaars.svg"}) (str account-email)) ent/nbsp "Log out")
+             :logged-out (div :.item {:style   {:position "relative"}
+                                      :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
+                              "Login"
+                              (when open?
+                                (div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
+                                                                                    ;; Stop bubbling (would trigger the menu toggle)
+                                                                                    (evt/stop-propagation! e))
+                                                                         :classes [floating-menu]}
+                                     (h3 :.ui.header "Login")
+                                     (form :.ui.form {:classes [(when (seq error) "error")]}
+                                           (field {:label    "Email"
+                                                   :value    email
+                                                   :onChange #(m/set-string! this :account/email :event %)})
+                                           (field {:label    "Password"
+                                                   :type     "password"
+                                                   :value    password
+                                                   :onChange #(comp/set-state! this {:password (evt/target-value %)})})
+                                           (div :.ui.error.message error)
+                                           (div :.ui.field
+                                                (button :.ui.button
+                                                        {:type    "button"
+                                                         :onClick (fn [] (uism/trigger! this ::session/session :event/login-by-email
+                                                                                        {:email    email
+                                                                                         :password password}))
+                                                         :classes [(when loading? "loading")]} "Login"))
+                                           (div :.ui.message
+                                                (p "Don't have an account?")
+                                                (a {:onClick (fn []
+                                                               (uism/trigger! this ::session/session :event/toggle-modal {})
+                                                               (routing/route-to! "/signup"))}
+                                                   "Please sign up!")))))))))))
 
 (def ui-login (comp/factory Login))
 
-(defsc AccountUploadNewProject [this {:ui/keys [new-project-name] :as props}]
+(defsc AccountUploadNewProject [this {:ui/keys [new-project-name server-side-files-str] :as props}]
   {:ident         (fn [] [:component/id :upload-new-project-panel])
    :query         [{[:component/id :session] [{:session/account [:account/id]}]}
                    :ui/new-project-name
+                   :ui/server-side-files-str
                    [df/marker-table '_]]
    :initial-state {:ui/new-project-name ""}}
   (let [marker           (get-in (log/spy props) [df/marker-table :app.model.project/create-project-with-files])
@@ -325,8 +321,9 @@
          (form :.ui.form
                (div :.field
                     (label "Project Name")
-                    (input {:value    (or new-project-name "")
-                            :onChange (fn [evt] (m/set-string! this :ui/new-project-name :event evt))}))
+                    (input {:value       (or new-project-name "")
+                            :placeholder "Please type a project name"
+                            :onChange    (fn [evt] (m/set-string! this :ui/new-project-name :event evt))}))
                (div :.field
                     (label "FastQ Files")
                     (input {:type     "file"
@@ -334,6 +331,13 @@
                             :onChange (fn [evt]
                                         (let [files (fu/evt->uploads evt)]
                                           (comp/set-state! this {:fastq-files files})))}))
+               (div :.field
+                    (label "FastQ Files (Server-side)")
+                    (input {:type        "text"
+                            :disabled    true
+                            :value       (or server-side-files-str "")
+                            :placeholder "Type path(s) to *.fastq.gz files on the server (separated by \";\"), or leave empty."
+                            :onChange    (fn [evt] (m/set-string! this :ui/server-side-files-str :event evt))}))
                (button {:type    "button"
                         :onClick (fn []
                                    (let [fastq-files (comp/get-state this :fastq-files)]
@@ -386,7 +390,8 @@
    :query         [:session/valid?
                    {:session/account (comp/get-query SessionAccount)}
                    {:create-new-project (comp/get-query AccountUploadNewProject)}]
-   :initial-state {:create-new-project {}}}
+   :initial-state {:session/account    {}
+                   :create-new-project {}}}
   (div :.ui.container
        (div :.ui.segment
             (if valid?
@@ -400,12 +405,42 @@
 (def ui-main-session-view (comp/factory MainSessionView))
 
 
-(defsc Main [this {:main/keys [main-session-view]}]
+(defsc AutoRefresh [this {:ui/keys [active?]}]
+  {:ident          (fn [] [:component/id :auto-refresh])
+   :query          [:ui/active?]
+   :initial-state  {:ui/active? false}
+   :initLocalState (fn [this props]
+                     {:turn-on-auto-refresh  #(uism/begin! this auto-refresh/sm ::auto-refresh
+                                                           {:actor/flagger this
+                                                            :actor/subject (comp/class->any this SessionAccount)})
+                      :turn-off-auto-refresh #(uism/trigger! this ::auto-refresh :event/exit)
+                      :refresh               #(df/refresh! (comp/class->any this SessionAccount))})}
+  (div :.ui.segment
+       (button :.ui.compact.icon.button
+               {:onClick (comp/get-state this :refresh)
+                :title   "Manual refresh"}
+               (i :.refresh.icon))
+       (if active?
+         (button :.ui.compact.positive.button
+                 {:onClick (comp/get-state this :turn-off-auto-refresh)}
+                 "Stop auto-refresh")
+         (button :.ui.compact.button
+                 {:onClick (comp/get-state this :turn-on-auto-refresh)}
+                 "Start auto-refresh"))))
+
+(def ui-auto-refresh (comp/factory AutoRefresh))
+
+
+(defsc Main [this {:main/keys [main-session-view auto-refresh]}]
   {:ident         (fn [] [:component/id :main])
-   :query         [{:main/main-session-view (comp/get-query MainSessionView)}]
-   :initial-state {:main/main-session-view {}}
+   :query         [{:main/main-session-view (comp/get-query MainSessionView)}
+                   {:main/auto-refresh (comp/get-query AutoRefresh)}]
+   :initial-state {:main/main-session-view {}
+                   :main/auto-refresh      {}}
    :route-segment ["main"]}
-  (ui-main-session-view main-session-view))
+  (div
+    (ui-auto-refresh auto-refresh)
+    (ui-main-session-view main-session-view)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]
@@ -472,7 +507,7 @@
          (div :.ui.grid
               (div :.ui.row
                    (ui-top-router router)))
-         (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
+         ;; (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
          ;; (div {:classes [floating]} (str "Remotes (" (str/join ", " active-remotes) ") are processing ..."))
          )))
 
