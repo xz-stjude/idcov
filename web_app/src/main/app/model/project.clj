@@ -19,7 +19,6 @@
    ::pc/output [:project/id
                 :project/name
                 {:project/files [:file/id]}]}
-  (log/spy output)
   (d/pull @conn output [:project/id id]))
 
 (defmutation create-project-with-files

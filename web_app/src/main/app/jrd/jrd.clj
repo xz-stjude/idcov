@@ -66,7 +66,14 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
-          (let [p (cl/proc (.getPath (io/resource "workflow/test.sh")) :dir pwd)]
+          (let [p (cl/proc
+                    ;; (.getPath (io/resource "workflow/test.sh"))
+                    "nextflow"
+                    "-C" (.getPath (io/resource "workflow/cloud.config"))
+                    "run"
+                    ;; "-ansi-log" "false"
+                    (.getPath (io/resource "workflow/cloud.groovy"))
+                    :dir pwd)]
             (cl/stream-to p :out (io/file pwd "stdout"))
             (cl/stream-to p :err (io/file pwd "stderr")))
           ;; ------------------------------------------------------------------------------
@@ -74,8 +81,8 @@
 
           ;; TODO: Throw an error if necessary output-files do not exist
 
-          ;; register all files in the pwd/output-files folder
-          (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output-files")))
+          ;; register all files in the pwd/output_files folder
+          (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output_files")))
                 registered-files (map (fn [f] (file/register-file conn f)) output-files)]
             (d/transact conn [{:run/id           run-id
                                :run/status       :succeeded

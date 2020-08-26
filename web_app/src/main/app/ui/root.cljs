@@ -111,6 +111,7 @@
                    ;; TODO: Have a function to download all files as a zipped archive
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
+              (div :.description (str id))
               (when (seq message)
                 (div :.ui.segment
                      (h4 :.ui.header "Message")
@@ -123,7 +124,6 @@
                 (div :.ui.segment
                      (h4 :.ui.header "Worker stderr")
                      (pre (str stderr))))
-              (div :.description (str id))
               (when (= :succeeded status)
                 (div :.list
                      (map ui-file output-files)))))))

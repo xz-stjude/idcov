@@ -37,7 +37,6 @@
                 :run/message
                 {:run/output-files [:file/id]}
                 ]}
-  (log/spy output)
   (d/pull @conn output [:run/id id]))
 
 (defresolver run-stdout [{{output ::pc/output} ::pc/resolver-data

@@ -2,25 +2,25 @@
 
 echo "Start!"
 
-echo "mkdir output-files"
-sleep 20
-mkdir output-files
+echo "mkdir output_files"
+sleep 5
+mkdir output_files
 
-echo "conda -V >> output-files/info.txt"
+echo "conda -V >> output_files/info.txt"
 sleep 1
-conda -V >> output-files/info.txt
+conda -V >> output_files/info.txt
 
-echo "tree >> output-files/info.txt"
+echo "tree >> output_files/info.txt"
 sleep 1
-tree >> output-files/info.txt
+tree >> output_files/info.txt
 
-echo "cat /dev/urandom | head -c 1024 | xxd > output-files/info.txt"
+echo "cat /dev/urandom | head -c 1024 | xxd >> output_files/info.txt"
 sleep 1
-cat /dev/urandom | head -c 1024 | xxd > output-files/info.txt
+cat /dev/urandom | head -c 1024 | xxd > output_files/info.txt
 
-echo "cat > output-files/hello.csv <<- EOM ..."
+echo "cat >> output_files/hello.csv <<- EOM ..."
 sleep 1
-cat > output-files/hello.csv <<- EOM
+cat > output_files/hello.csv <<- EOM
 Hello,World
 A,1
 B,2
