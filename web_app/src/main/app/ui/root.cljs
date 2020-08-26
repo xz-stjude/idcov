@@ -111,6 +111,9 @@
                    ;; TODO: Have a function to download all files as a zipped archive
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
+              (when (= :succeeded status)
+                (div :.list
+                     (map ui-file output-files)))
               (div :.description (str id))
               (when (seq message)
                 (div :.ui.segment
@@ -123,10 +126,7 @@
               (when (seq stderr)
                 (div :.ui.segment
                      (h4 :.ui.header "Worker stderr")
-                     (pre (str stderr))))
-              (when (= :succeeded status)
-                (div :.list
-                     (map ui-file output-files)))))))
+                     (pre (str stderr))))))))
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 

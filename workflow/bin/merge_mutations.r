@@ -37,6 +37,9 @@ df_mutations <- read_tsv(
     "info",
     "format",
     "scores"
+  ),
+  col_types = cols(
+    pos = col_integer()
   )
 ) %>%
   select(pos, ref, alt) %>%
@@ -45,7 +48,10 @@ df_mutations <- read_tsv(
 
 marker_ref <-
   ## read_csv('./6-markers/markers.csv') %>%
-  read_csv(args[3]) %>%
+  read_csv(args[3],
+           col_types = cols(
+             pos = col_integer()
+           )) %>%
   select(pos, original_ref=ref) %>%
   print
 

@@ -47,7 +47,7 @@ process bwa {
     output:
     tuple val(sample_id), file("${sample_id}.bam")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -66,7 +66,7 @@ process samtools_index {
     output:
     tuple val(sample_id), file("${sample_id}.bam"), file("${sample_id}.bam.bai")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -85,7 +85,7 @@ process freebayes {
     output:
     tuple sample_id, file("${sample_id}.vcf")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -105,7 +105,7 @@ process bedtools {
     // tuple sample_id, file("${sample_id}.bedgraph") into ch_bedgraph
     tuple sample_id, file("${sample_id}_uncovered_intervals.bedgraph")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -125,7 +125,7 @@ process get_coverage_of_markers {
     output:
     tuple sample_id, file("./${sample_id}_coverage.bed")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -144,7 +144,7 @@ process compare_mutations {
     output:
     tuple sample_id, file("${sample_id}_markers.csv"), file("${sample_id}_scores_vs_strains.csv")
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """
@@ -163,7 +163,7 @@ process collect_all_samples {
     output:
     file "all_samples*.csv"
 
-    publishDir 'results'
+    publishDir params.result_folder
 
     script:
     """

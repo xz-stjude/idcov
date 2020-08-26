@@ -71,7 +71,7 @@
                     "nextflow"
                     "-C" (.getPath (io/resource "workflow/cloud.config"))
                     "run"
-                    ;; "-ansi-log" "false"
+                    "-ansi-log" "false"
                     (.getPath (io/resource "workflow/cloud.groovy"))
                     :dir pwd)]
             (cl/stream-to p :out (io/file pwd "stdout"))
