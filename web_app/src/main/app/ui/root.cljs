@@ -161,11 +161,12 @@
                                                                   :account-id (:account/id (comp/props this))})
                                                                (comp/get-query SessionAccount)}]))})}
   (div
-    (div :.ui.segment {:style {:overflow "auto"}}
-         (h3 :.ui.header "Runs")
-         (div :.ui.relaxed.divided.list {}
-              (for [run runs]
-                (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
+    (when (seq runs)
+      (div :.ui.segment {:style {:overflow "auto"}}
+           (h3 :.ui.header "Runs")
+           (div :.ui.relaxed.divided.list {}
+                (for [run runs]
+                  (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run]))))))
     (div :.ui.segment
          (h3 :.ui.header "Projects")
          (div :.ui.relaxed.divided.list {}
