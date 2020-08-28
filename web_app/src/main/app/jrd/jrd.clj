@@ -67,12 +67,12 @@
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
           (let [p (cl/proc
-                    ;; (.getPath (io/resource "workflow/test.sh"))
-                    "nextflow"
-                    "-C" (.getPath (io/resource "workflow/cloud.config"))
-                    "run"
-                    "-ansi-log" "false"
-                    (.getPath (io/resource "workflow/cloud.groovy"))
+                    (.getPath (io/resource "workflow/test.sh"))
+                    ;; "nextflow"
+                    ;; "-C" (.getPath (io/resource "workflow/cloud.config"))
+                    ;; "run"
+                    ;; "-ansi-log" "false"
+                    ;; (.getPath (io/resource "workflow/cloud.groovy"))
                     :dir pwd)]
             (cl/stream-to p :out (io/file pwd "stdout"))
             (cl/stream-to p :err (io/file pwd "stderr")))

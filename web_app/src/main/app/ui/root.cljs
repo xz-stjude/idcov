@@ -245,7 +245,11 @@
            :ui/loading?
            :ui/email
 
-           {[:component/id :session] (comp/get-query SessionQ)}]
+           {[:component/id :session] (comp/get-query SessionQ)}
+           ;; NOTE: Why this instead of having :ident be (fn [] [:component/id :session])?
+           ;; The reason is to avoid :ui/xxx be put into [:component/id :session]
+           ;; The sacrifice is that we could never do (df/load! this :xxx Login), but that's okay because we would never do that.
+           ]
    :initial-state {:ui/error ""
                    :ui/state :initial
                    :ui/email ""}
@@ -381,25 +385,22 @@
 
 (def ui-account-upload-new-project (comp/factory AccountUploadNewProject))
 
-(defsc MainSessionView [this {:ui/keys      [create-new-project]
-                              :session/keys [valid? account]
-                              :as           props}]
-  {:ident         (fn [] [:component/id :session])
-   :query         [:session/valid?
-                   {:session/account (comp/get-query SessionAccount)}
+(defsc MainSessionView [this {:ui/keys [create-new-project]
+                              :as      props}]
+  {:ident         (fn [] [:component/id :main-session-view])
+   :query         [{[:component/id :session] (comp/get-query SessionQ)}
                    {:ui/create-new-project (comp/get-query AccountUploadNewProject)}]
-   :initial-state {:session/valid?        false
-                   :session/account       {}
-                   :ui/create-new-project {}}}
-  (div :.ui.container
-       (div :.ui.segment
-            (if valid?
-              (div {}
-                   (h2 (str "Hello, " (or (:account/email account) "The unknown one") "!"))
-                   (ui-session-account account)
-                   (ui-account-upload-new-project create-new-project)
-                   )
-              (div {} "Logged out")))))
+   :initial-state {:ui/create-new-project {}}}
+  (let [{:session/keys [valid? account]} (get props [:component/id :session])]
+    (div :.ui.container
+         (div :.ui.segment
+              (if valid?
+                (div {}
+                     (h2 (str "Hello, " (or (:account/email account) "The unknown one") "!"))
+                     (ui-session-account account)
+                     (ui-account-upload-new-project create-new-project)
+                     )
+                (div {} "Logged out"))))))
 
 (def ui-main-session-view (comp/factory MainSessionView))
 
