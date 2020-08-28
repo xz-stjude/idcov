@@ -32,7 +32,7 @@
   MainSessionView ui-main-session-view
   ProjectItem ui-project-item
   Root
-  Session
+  SessionQ
   Settings
   Signup
   SignupSuccess
@@ -74,7 +74,7 @@
                  " - " (a {:onClick #(run-project id)} "run"))
             (div :.description (str id))
             (div :.list
-                 (map ui-file files)))))
+                 (map ui-file (sort-by #(:file/name %) files))))))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
@@ -92,7 +92,6 @@
                    [:.failed {:color "red"}]
                    [:.succeeded {:color "green"}]]}
   (let [classes (css/get-classnames RunItem)]
-    (log/spy output-files)
     (div :.item
          (i :.large.icon.plane
             {:classes (filter some? [(when (= :retracted status) (:retracted classes))
@@ -111,10 +110,10 @@
                    ;; TODO: Have a function to download all files as a zipped archive
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
+              (div :.description (str id))
               (when (= :succeeded status)
                 (div :.list
-                     (map ui-file output-files)))
-              (div :.description (str id))
+                     (map ui-file (sort-by #(:file/name %) output-files))))
               (when (seq message)
                 (div :.ui.segment
                      (h4 :.ui.header "Message")
@@ -237,21 +236,19 @@
                                          :onClick #(submit! true)}
                     "Sign Up")))))
 
-(defsc Login [this {:account/keys [email]
-                    :ui/keys      [error open? state loading?]
-                    :as           props}]
+(defsc Login [this {:ui/keys [error open? state loading? email]
+                    :as      props}]
   {:ident (fn [] [:component/id :login])
    :query [:ui/open?
            :ui/error
            :ui/state
            :ui/loading?
+           :ui/email
 
-           :account/email
-
-           {[:component/id :session] (comp/get-query Session)}]
-   :initial-state {:ui/error      ""
-                   :ui/state      :initial
-                   :account/email ""}
+           {[:component/id :session] (comp/get-query SessionQ)}]
+   :initial-state {:ui/error ""
+                   :ui/state :initial
+                   :ui/email ""}
    :css           [[:.floating-menu {:position "absolute !important"
                                      :z-index  1000
                                      :width    "300px"
@@ -283,7 +280,7 @@
                                      (form :.ui.form {:classes [(when (seq error) "error")]}
                                            (field {:label    "Email"
                                                    :value    email
-                                                   :onChange #(m/set-string! this :account/email :event %)})
+                                                   :onChange #(m/set-string! this :ui/email :event %)})
                                            (field {:label    "Password"
                                                    :type     "password"
                                                    :value    password
@@ -312,7 +309,7 @@
                    :ui/server-side-files-str
                    [df/marker-table '_]]
    :initial-state {:ui/new-project-name ""}}
-  (let [marker           (get-in (log/spy props) [df/marker-table :app.model.project/create-project-with-files])
+  (let [marker           (get-in props [df/marker-table :app.model.project/create-project-with-files])
         status           (:status marker)
         progress-phase   (:progress-phase marker)
         overall-progress (:overall-progress marker)
@@ -344,11 +341,11 @@
                                    (let [fastq-files (comp/get-state this :fastq-files)]
                                      (comp/transact!
                                        this
-                                       [{(log/spy (project/create-project-with-files
-                                                    (fu/attach-uploads
-                                                      {:project-name new-project-name
-                                                       :account-id   (get-in props [[:component/id :session] :session/account :account/id])}
-                                                      fastq-files)))
+                                       [{(project/create-project-with-files
+                                           (fu/attach-uploads
+                                             {:project-name new-project-name
+                                              :account-id   (get-in props [[:component/id :session] :session/account :account/id])}
+                                             fastq-files))
                                          (comp/get-query SessionAccount)}]
                                        {:abort-id :create-project-with-files})))}
                        "Create Project"))
@@ -384,15 +381,16 @@
 
 (def ui-account-upload-new-project (comp/factory AccountUploadNewProject))
 
-(defsc MainSessionView [this {:keys         [create-new-project]
+(defsc MainSessionView [this {:ui/keys      [create-new-project]
                               :session/keys [valid? account]
                               :as           props}]
   {:ident         (fn [] [:component/id :session])
    :query         [:session/valid?
                    {:session/account (comp/get-query SessionAccount)}
-                   {:create-new-project (comp/get-query AccountUploadNewProject)}]
-   :initial-state {:session/account    {}
-                   :create-new-project {}}}
+                   {:ui/create-new-project (comp/get-query AccountUploadNewProject)}]
+   :initial-state {:session/valid?        false
+                   :session/account       {}
+                   :ui/create-new-project {}}}
   (div :.ui.container
        (div :.ui.segment
             (if valid?
@@ -459,10 +457,12 @@
 
 (def ui-top-router (comp/factory TopRouter))
 
-(defsc Session
+(defsc SessionQ
   "Session representation. Used primarily for server queries. On-screen representation happens in Login component."
   [_ _]
-  {:query         [:session/valid?
+  {
+   ;; TODO: it's a bad practice for a pure query to depend on a view
+   :query         [:session/valid?
                    {:session/account (comp/get-query SessionAccount)}]
    :ident         (fn [] [:component/id :session])
    ;; :pre-merge     (fn [{:keys [data-tree]}]
@@ -479,7 +479,7 @@
                         :as props}]
   {:ident         (fn [] [:component/id :top-chrome])
    :query         [{:root/router (comp/get-query TopRouter)}
-                   {:root/current-session (comp/get-query Session)}
+                   {:root/current-session (comp/get-query SessionQ)}
                    {:root/login (comp/get-query Login)}
                    [::uism/asm-id ::TopRouter]
                    [::app/active-remotes '_]]
@@ -522,198 +522,4 @@
 ;; 
 
 (comment
-  ;; the entire db
-  ;; {:com.fulcrologic.fulcro.ui-state-machines/asm-id
-  ;;  {:app.ui.root/TopRouter
-  ;;   #:com.fulcrologic.fulcro.ui-state-machines{:asm-id                :app.ui.root/TopRouter,
-  ;;                                              :state-machine-id      com.fulcrologic.fulcro.routing.dynamic-routing/RouterStateMachine,
-  ;;                                              :active-state          :routed,
-  ;;                                              :ident->actor          {[:com.fulcrologic.fulcro.routing.dynamic-routing/id
-  ;;                                                                       :app.ui.root/TopRouter]
-  ;;                                                                      :router},
-  ;;                                              :actor->ident          {:router
-  ;;                                                                      [:com.fulcrologic.fulcro.routing.dynamic-routing/id
-  ;;                                                                       :app.ui.root/TopRouter]},
-  ;;                                              :actor->component-name {},
-  ;;                                              :active-timers         {},
-  ;;                                              :local-storage         {:pending-path-segment [],
-  ;;                                                                      :target               [:component/id :main],
-  ;;                                                                      :path-segment         ["main"]}},
-  ;;   :app.model.session/session
-  ;;   #:com.fulcrologic.fulcro.ui-state-machines{:asm-id                    :state-machine-id
-  ;;                                              :app.model.session/session app.model.session/session-machine,
-  ;;                                              :active-state              :state/logged-in,
-  ;;                                              :ident->actor              {[:component/id :login]
-  ;;                                                                          :actor/login-form,
-  ;;                                                                          [:component/id :session]
-  ;;                                                                          :actor/current-session},
-  ;;                                              :actor->ident              #:actor{:login-form
-  ;;                                                                                 [:component/id :login],
-  ;;                                                                                 :current-session
-  ;;                                                                                 [:component/id
-  ;;                                                                                  :session]},
-  ;;                                              :actor->component-name     #:actor{:login-form
-  ;;                                                                                 :app.ui.root/Login,
-  ;;                                                                                 :current-session
-  ;;                                                                                 :app.ui.root/Session},
-  ;;                                              :active-timers             {},
-  ;;                                              :local-storage             {}}},
-  ;;  :com.fulcrologic.fulcro.algorithms.form-state/forms-by-ident
-  ;;  {{:table :component/id, :row :signup} #:com.fulcrologic.fulcro.algorithms.form-state{:id             [:component/id :signup],
-  ;;                                                                                       :fields         #{:account/password
-  ;;                                                                                                         :account/password-again
-  ;;                                                                                                         :account/email},
-  ;;                                                                                       :pristine-state #:account{:password "",
-  ;;                                                                                                                 :password-again
-  ;;                                                                                                                 "",
-  ;;                                                                                                                 :email    ""},
-  ;;                                                                                       :subforms       {},
-  ;;                                                                                       :complete?      #{:account/password
-  ;;                                                                                                         :account/password-again
-  ;;                                                                                                         :account/email}}},
-  ;;  :app.model.session/current-session                 [:component/id :session],
-  ;;  :fulcro.inspect.core/app-id                        "app.ui.root/Root",
-  ;;  :root/top-chrome                                   [:component/id :top-chrome],
-  ;;  :fulcro.inspect.core/app-uuid                      #uuid "d234b6bf-3aaa-43a2-b4a1-42d1ad45c9d2",
-  ;;  :com.fulcrologic.fulcro.routing.dynamic-routing/id #:app.ui.root{:TopRouter
-  ;;                                                                   {:com.fulcrologic.fulcro.routing.dynamic-routing/id            :app.ui.root/TopRouter,
-  ;;                                                                    :com.fulcrologic.fulcro.routing.dynamic-routing/current-route [:component/id :main],
-  ;;                                                                    :alt0                                                         [:component/id :signup],
-  ;;                                                                    :alt1                                                         [:component/id :signup-success],
-  ;;                                                                    :alt2                                                         [:component/id :settings]}},
-  ;;  :component/id                                      {:main           #:main{:welcome-message "Hi!"},
-  ;;                                                      :signup         {:account/email                                       "hello@hello.com",
-  ;;                                                                       :account/password                                    "asdfasdf",
-  ;;                                                                       :account/password-again                              "asdfasdf",
-  ;;                                                                       :com.fulcrologic.fulcro.algorithms.form-state/config [:com.fulcrologic.fulcro.algorithms.form-state/forms-by-ident {:table :component/id, :row :signup}]},
-  ;;                                                      :signup-success {},
-  ;;                                                      :settings       {},
-  ;;                                                      :session        {:com.wsscode.pathom.core/reader-error "class clojure.lang.ExceptionInfo: Invalid credentials - {:username \"hello@hello.com\"}",
-  ;;                                                                       :session/valid?                       true,
-  ;;                                                                       :account/name                         "hello@hello.com"},
-  ;;                                                      :login          {:account/email "hello@hello.com", :ui/error "", :ui/open? false},
-  ;;                                                      :top-chrome     #:root{:router          [:com.fulcrologic.fulcro.routing.dynamic-routing/id
-  ;;                                                                                               :app.ui.root/TopRouter],
-  ;;                                                                             :login           [:component/id :login],
-  ;;                                                                             :current-session [:component/id :session]}},
-  ;;  :com.fulcrologic.fulcro.components/queries         {"app.ui.root/TopRouter"                                   {:query         [:com.fulcrologic.fulcro.routing.dynamic-routing/id
-  ;;                                                                                                                                 [:com.fulcrologic.fulcro.ui-state-machines/asm-id :app.ui.root/TopRouter]
-  ;;                                                                                                                                 #:com.fulcrologic.fulcro.routing.dynamic-routing{:current-route
-  ;;                                                                                                                                                                                  "app.ui.root/Main"}],
-  ;;                                                                                                                 :id            "app.ui.root/TopRouter",
-  ;;                                                                                                                 :component-key :app.ui.root/TopRouter},
-  ;;                                                      "app.ui.root/Main"                                        {:query         [:main/welcome-message],
-  ;;                                                                                                                 :id            "app.ui.root/Main",
-  ;;                                                                                                                 :component-key :app.ui.root/Main},
-  ;;                                                      "app.ui.root/Settings"                                    {:query         [:account/time-zone :account/real-name],
-  ;;                                                                                                                 :id            "app.ui.root/Settings",
-  ;;                                                                                                                 :component-key :app.ui.root/Settings},
-  ;;                                                      "app.ui.root/SignupSuccess"                               {:query         [*],
-  ;;                                                                                                                 :id            "app.ui.root/SignupSuccess",
-  ;;                                                                                                                 :component-key :app.ui.root/SignupSuccess},
-  ;;                                                      "app.ui.root/Signup"                                      {:query         [:account/email
-  ;;                                                                                                                                 :account/password
-  ;;                                                                                                                                 :account/password-again #:com.fulcrologic.fulcro.algorithms.form-state{:config "com.fulcrologic.fulcro.algorithms.form-state/FormConfig"}],
-  ;;                                                                                                                 :id            "app.ui.root/Signup",
-  ;;                                                                                                                 :component-key :app.ui.root/Signup},
-  ;;                                                      "com.fulcrologic.fulcro.algorithms.form-state/FormConfig" {:query
-  ;;                                                                                                                 [:com.fulcrologic.fulcro.algorithms.form-state/id
-  ;;                                                                                                                  :com.fulcrologic.fulcro.algorithms.form-state/fields
-  ;;                                                                                                                  :com.fulcrologic.fulcro.algorithms.form-state/complete?
-  ;;                                                                                                                  :com.fulcrologic.fulcro.algorithms.form-state/subforms
-  ;;                                                                                                                  :com.fulcrologic.fulcro.algorithms.form-state/pristine-state],
-  ;;                                                                                                                 :id            "com.fulcrologic.fulcro.algorithms.form-state/FormConfig",
-  ;;                                                                                                                 :component-key :com.fulcrologic.fulcro.algorithms.form-state/FormConfig}},
-  ;;  :com.fulcrologic.fulcro.application/active-remotes #{}}
-
-
-
-  ;; (comp/get-query TopChrome)
-
-
-  {:ui/error                                  :account/email,
-   [:component/id :session]                   #:session{:valid? false}
-   [::uism/asm-id :app.model.session/session] #::uism{:asm-id
-                                                      :app.model.session/session,
-                                                      :state-machine-id
-                                                      #::uism{:actors           #{:actor/login-form
-                                                                                  :actor/current-session},
-                                                              :aliases          {:username       [:actor/login-form
-                                                                                                  :account/email],
-                                                                                 :error          [:actor/login-form
-                                                                                                  :ui/error],
-                                                                                 :modal-open?    [:actor/login-form
-                                                                                                  :ui/open?],
-                                                                                 :session-valid? [:actor/current-session
-                                                                                                  :session/valid?],
-                                                                                 :current-user   [:actor/current-session
-                                                                                                  :account/id]},
-                                                              :states           {:initial                #::uism{:target-states #{:state/logged-out
-                                                                                                                                  :state/logged-in},
-                                                                                                                 :events        {::uism/started
-                                                                                                                                 #::uism{:handler
-                                                                                                                                         "#object[Function]"},
-                                                                                                                                 :event/failed
-                                                                                                                                 #::uism{:target-state
-                                                                                                                                         :state/logged-out},
-                                                                                                                                 :event/complete
-                                                                                                                                 #::uism{:target-states
-                                                                                                                                         #{:state/logged-out
-                                                                                                                                           :state/logged-in},
-                                                                                                                                         :handler
-                                                                                                                                         "#object[Function]"}}},
-                                                                                 :state/checking-session #::uism{:events #:event{:toggle-modal #::uism{:handler "#object[Function]"},
-                                                                                                                                 :failed       #::uism{:target-states #{:state/logged-out},
-                                                                                                                                                       :handler       "#object[Function]"},
-                                                                                                                                 :complete     #::uism{:target-states #{:state/logged-out
-                                                                                                                                                                        :state/logged-in},
-                                                                                                                                                       :handler       "#object[Function]"}}},
-                                                                                 :state/logged-in        #::uism{:events #:event{:toggle-modal #::uism{:handler "#object[Function]"},
-                                                                                                                                 :logout       #::uism{:target-states #{:state/logged-out},
-                                                                                                                                                       :handler       "#object[app$model$session$logout]"}}},
-                                                                                 :state/logged-out       #::uism{:events #:event{:toggle-modal   #::uism{:handler
-                                                                                                                                                         "#object[Function]"},
-                                                                                                                                 :login-by-email #::uism{:target-states #{:state/checking-session},
-                                                                                                                                                         :handler       "#object[app$model$session$login_by_email]"}}}},
-                                                              :state-machine-id app.model.session/session-machine},
-                                                      :active-state          :state/logged-out,
-                                                      :ident->actor          {[:component/id :login]   :actor/login-form,
-                                                                              [:component/id :session] :actor/current-session},
-                                                      :actor->ident          #:actor{:login-form      [:component/id :login],
-                                                                                     :current-session [:component/id :session]},
-                                                      :actor->component-name #:actor{:login-form
-                                                                                     :app.ui.root/Login,
-                                                                                     :current-session
-                                                                                     :app.ui.root/Session},
-                                                      :active-timers         {},
-                                                      :local-storage         {}}}
-
-  (react-dom-server/renderToString
-    (div :.ui.container
-         (div :.ui.secondary.pointing.menu
-              (a :.item {:classes ["active"]
-                         :onClick (fn [e]
-                                    (js/console.log ["main"])
-                                    (.preventDefault e))}
-                 "Main")
-              (a :.item {:classes ["active"]
-                         :onClick (fn []
-                                    (js/console.log ["settings"])
-                                    (.preventDefault e))}
-                 "Settings")
-              (div :.right.menu
-                   "ui-login login"))
-         (div :.ui.grid
-              (div :.ui.row
-                   "ui-top-router router"))))
-
-  {{:table :component/id, :row :signup}
-   {:com.fulcrologic.fulcro.algorithms.form-state/id
-    [:component/id :signup],
-    :com.fulcrologic.fulcro.algorithms.form-state/fields
-    #{:account/password :account/password-again :account/email},
-    :com.fulcrologic.fulcro.algorithms.form-state/pristine-state
-    {:account/password       "",
-     :account/password-again "",
-     :account/email          ""},
-    :com.fulcrologic.fulcro.algorithms.form-state/subforms {}}})
+  )

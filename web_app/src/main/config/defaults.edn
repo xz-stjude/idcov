@@ -1,9 +1,14 @@
 {:legal-origins #{"localhost" "dev.lvh.me"}
 
- :db-location    "/data/1000/var/idcov/db"
- :file-base-path "/data/1000/var/idcov/files"
- :run-base-path  "/data/1000/var/idcov/runs"
- :log-path       "/data/1000/var/idcov/log"
+ ;; :db-location    "/data/1000/var/idcov/db"
+ ;; :file-base-path "/data/1000/var/idcov/files"
+ ;; :run-base-path  "/data/1000/var/idcov/runs"
+ ;; :log-path       "/data/1000/var/idcov/log"
+
+ :db-location    "/var/idcov/db"
+ :file-base-path "/var/idcov/files"
+ :run-base-path  "/var/idcov/runs"
+ :log-path       "/var/idcov/log"
 
  :org.httpkit.server/config {:port     3000
                              :max-body 2147483647}

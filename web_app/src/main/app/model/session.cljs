@@ -81,7 +81,6 @@
 
    ::uism/states {:initial                {::uism/target-states #{:state/logged-in :state/logged-out}
                                            ::uism/events        {::uism/started  {::uism/handler (fn [env]
-                                                                                                   (log/spy env)
                                                                                                    (routing/route-to! "/main")
                                                                                                    (-> env
                                                                                                        (uism/assoc-aliased :error ""
@@ -89,7 +88,8 @@
                                                                                                                            :login-state :initial)
                                                                                                        (uism/load ::current-session :actor/current-session
                                                                                                                   {::uism/ok-event    :event/complete
-                                                                                                                   ::uism/error-event :event/failed})))}
+                                                                                                                   ::uism/error-event :event/failed})
+                                                                                                       ))}
                                                                  :event/failed   {::uism/target-states #{:state/logged-out}
                                                                                   ::uism/handler       (fn [env]
                                                                                                          (-> env
