@@ -26,6 +26,7 @@
 (declare
   SessionAccount ui-session-account
   AccountUploadNewProject ui-account-upload-new-project
+  AutoRefresh ui-auto-refresh
   File ui-file
   Login
   Main
@@ -270,10 +271,10 @@
            (case state
              :initial    (span :.item "Initializing ...")
              :logged-in  (button :.item
-                                 {:onClick #(uism/trigger! this ::session/session :event/logout)}
+                                 {:onClick #(uism/trigger! this :session :event/logout)}
                                  (span :.ui.image.label (img {:src "/avataaars.svg"}) (str account-email)) ent/nbsp "Log out")
              :logged-out (div :.item {:style   {:position "relative"}
-                                      :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
+                                      :onClick #(uism/trigger! this :session :event/toggle-modal)}
                               "Login"
                               (when open?
                                 (div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
@@ -293,14 +294,14 @@
                                            (div :.ui.field
                                                 (button :.ui.button
                                                         {:type    "button"
-                                                         :onClick (fn [] (uism/trigger! this ::session/session :event/login-by-email
+                                                         :onClick (fn [] (uism/trigger! this :session :event/login-by-email
                                                                                         {:email    email
                                                                                          :password password}))
                                                          :classes [(when loading? "loading")]} "Login"))
                                            (div :.ui.message
                                                 (p "Don't have an account?")
                                                 (a {:onClick (fn []
-                                                               (uism/trigger! this ::session/session :event/toggle-modal {})
+                                                               (uism/trigger! this :session :event/toggle-modal {})
                                                                (routing/route-to! "/signup"))}
                                                    "Please sign up!")))))))))))
 
@@ -385,18 +386,22 @@
 
 (def ui-account-upload-new-project (comp/factory AccountUploadNewProject))
 
-(defsc MainSessionView [this {:ui/keys [create-new-project]
+(defsc MainSessionView [this {:ui/keys [create-new-project auto-refresh]
                               :as      props}]
   {:ident         (fn [] [:component/id :main-session-view])
    :query         [{[:component/id :session] (comp/get-query SessionQ)}
-                   {:ui/create-new-project (comp/get-query AccountUploadNewProject)}]
-   :initial-state {:ui/create-new-project {}}}
+                   {:ui/create-new-project (comp/get-query AccountUploadNewProject)}
+                   {:ui/auto-refresh (comp/get-query AutoRefresh)}]
+   :initial-state {:ui/create-new-project {}
+                   :ui/auto-refresh       {}
+                   }}
   (let [{:session/keys [valid? account]} (get props [:component/id :session])]
     (div :.ui.container
          (div :.ui.segment
               (if valid?
                 (div {}
                      (h2 (str "Hello, " (or (:account/email account) "The unknown one") "!"))
+                     (ui-auto-refresh auto-refresh)
                      (ui-session-account account)
                      (ui-account-upload-new-project create-new-project)
                      )
@@ -405,41 +410,43 @@
 (def ui-main-session-view (comp/factory MainSessionView))
 
 
-(defsc AutoRefresh [this {:ui/keys [active?]}]
-  {:ident          (fn [] [:component/id :auto-refresh])
-   :query          [:ui/active?]
-   :initial-state  {:ui/active? false}
-   :initLocalState (fn [this props]
-                     {:turn-on-auto-refresh  #(uism/begin! this auto-refresh/sm ::auto-refresh
-                                                           {:actor/flagger this
-                                                            :actor/subject (comp/class->any this SessionAccount)})
-                      :turn-off-auto-refresh #(uism/trigger! this ::auto-refresh :event/exit)
-                      :refresh               #(df/refresh! (comp/class->any this SessionAccount))})}
-  (div :.ui.segment
-       (button :.ui.compact.icon.button
-               {:onClick (comp/get-state this :refresh)
-                :title   "Manual refresh"}
-               (i :.refresh.icon))
-       (if active?
-         (button :.ui.compact.positive.button
-                 {:onClick (comp/get-state this :turn-off-auto-refresh)}
-                 "Stop auto-refresh")
-         (button :.ui.compact.button
-                 {:onClick (comp/get-state this :turn-on-auto-refresh)}
-                 "Start auto-refresh"))))
+(defsc AutoRefresh [this _]
+  {:ident             (fn [] [:component/id :auto-refresh])
+   :query             [[::uism/asm-id :auto-refresh]]
+   :initial-state     {}
+   :initLocalState    (fn [this props]
+                        (letfn [(refresh [] (df/refresh! (comp/class->any this SessionAccount)))]
+                          {:turn-on-auto-refresh  #(uism/trigger! this :auto-refresh :event/start {:tick-fn refresh})
+                           :turn-off-auto-refresh #(uism/trigger! this :auto-refresh :event/stop)
+                           :refresh               refresh}))
+   :componentDidMount (fn [this props]
+                        ((comp/get-state this :turn-on-auto-refresh)))}
+  (let [current-state (log/spy (uism/get-active-state this :auto-refresh))]
+    (div :.ui.segment
+         (button :.ui.compact.icon.button
+                 {:onClick (comp/get-state this :refresh)
+                  :title   "Manual refresh"}
+                 (i :.refresh.icon))
+         (case current-state
+           :state/running (button :.ui.compact.positive.button
+                                  {:onClick (comp/get-state this :turn-off-auto-refresh)}
+                                  "Stop auto-refresh")
+           :state/stopped (button :.ui.compact.button
+                                  {:onClick (comp/get-state this :turn-on-auto-refresh)}
+                                  "Start auto-refresh")
+           (button :.ui.compact.button
+                   {:disabled true}
+                   "Loading ...")))))
 
 (def ui-auto-refresh (comp/factory AutoRefresh))
 
 
-(defsc Main [this {:main/keys [main-session-view auto-refresh]}]
+(defsc Main [this {:main/keys [main-session-view]}]
   {:ident         (fn [] [:component/id :main])
-   :query         [{:main/main-session-view (comp/get-query MainSessionView)}
-                   {:main/auto-refresh (comp/get-query AutoRefresh)}]
-   :initial-state {:main/main-session-view {}
-                   :main/auto-refresh      {}}
+   :query         [{:main/main-session-view (comp/get-query MainSessionView)}]
+   :initial-state {:main/main-session-view {}}
    :route-segment ["main"]}
   (div
-    (ui-auto-refresh auto-refresh)
     (ui-main-session-view main-session-view)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]

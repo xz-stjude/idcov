@@ -7,7 +7,8 @@
             [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
             [com.fulcrologic.fulcro.algorithms.form-state :as fs]
             [clojure.string :as str]
-            [app.routing :as routing]))
+            [app.routing :as routing]
+            [com.fulcrologic.fulcro.data-fetch :as df]))
 
 (defn logout [env]
   (let [session-ident (uism/actor->ident env :actor/current-session)]
@@ -71,7 +72,8 @@
                    ;; mapped to root/Session
                    :actor/current-session}
 
-   ::uism/aliases {:username        [:actor/login-form :account/email]
+   ::uism/aliases {
+                   :username        [:actor/login-form :account/email]
                    :error           [:actor/login-form :ui/error]
                    :modal-open?     [:actor/login-form :ui/open?]
                    :loading?        [:actor/login-form :ui/loading?]

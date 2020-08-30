@@ -12,23 +12,27 @@
             [com.fulcrologic.fulcro.data-fetch :as df]))
 
 (uism/defstatemachine sm
-  {::uism/actors #{:actor/flagger
-                   :actor/subject}
+  {::uism/actors #{}
 
-   ::uism/aliases {:active? [:actor/flagger :ui/active?]}
+   ::uism/aliases {}
 
-   ::uism/states {:initial {::uism/target-states #{:state/logged-in :state/logged-out}
-                            ::uism/events        {::uism/started {::uism/handler (fn [env]
-                                                                                   (-> env
-                                                                                       (uism/assoc-aliased :active? true)
-                                                                                       (uism/trigger (uism/asm-id env) :event/tick)))}
-                                                  :event/tick    {::uism/handler (fn [env]
-                                                                                   (-> env
-                                                                                       (uism/load-actor :actor/subject)
-                                                                                       (uism/set-timeout ::main-timer :event/tick {} 1000)
-                                                                                       ))}
-                                                  :event/exit    {::uism/handler (fn [env]
-                                                                                   (-> env
-                                                                                       (uism/assoc-aliased :active? false)
-                                                                                       (uism/exit)))}}}}})
+   ::uism/states {:initial       {::uism/events {::uism/started {::uism/handler (fn [env]
+                                                                                  (-> env
+                                                                                      (uism/activate :state/stopped)))}}}
+                  :state/stopped {::uism/events {:event/start {::uism/handler (fn [{::uism/keys [event-data] :as env}]
+                                                                                (log/spy event-data)
+                                                                                (-> env
+                                                                                    (uism/store :tick-fn (:tick-fn event-data))
+                                                                                    (uism/trigger (uism/asm-id env) :event/tick)
+                                                                                    (uism/activate :state/running)))}}}
+                  :state/running {::uism/events {:event/stop {::uism/handler (fn [env]
+                                                                               (-> env
+                                                                                   (uism/activate :state/stopped)))}
+                                                 :event/tick {::uism/handler (fn [env]
+                                                                               (log/debug "tick!")
+                                                                               (log/spy (uism/retrieve env :tick-fn))
+                                                                               ((uism/retrieve env :tick-fn))
+                                                                               ;; (log/debug "Done!")
+                                                                               (-> env
+                                                                                   (uism/set-timeout :main-timer :event/tick {} 1000)))}}}}})
 

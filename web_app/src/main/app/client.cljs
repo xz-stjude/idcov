@@ -14,7 +14,8 @@
    [com.fulcrologic.fulcro.algorithms.merge :as merge]
    [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
    [com.fulcrologic.fulcro.inspect.inspect-client :as inspect]
-   [app.routing :as routing]))
+   [app.routing :as routing]
+   [app.model.auto-refresh :as auto-refresh]))
 
 (defn ^:export refresh []
   (log/info "Hot code Remount")
@@ -29,9 +30,10 @@
   (dr/initialize! SPA)
   (routing/start!)
   (log/info "Starting session machine.")
-  (uism/begin! SPA session/sm ::session/session
+  (uism/begin! SPA session/sm :session
                {:actor/login-form      root/Login
                 :actor/current-session root/SessionQ})
+  (uism/begin! SPA auto-refresh/sm :auto-refresh {})
   (app/mount! SPA root/Root "app" {:initialize-state? false})
   )
 
