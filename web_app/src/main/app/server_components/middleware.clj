@@ -91,7 +91,7 @@
 
 (defn wrap-download-file [ring-handler]
   (fn [{:keys [uri anti-forgery-token] :as req}]
-    (let [file-match (re-matches #"/file/(.*)/download" uri)]
+    (let [file-match (re-matches #"/files/(.*)/download" uri)]
       (cond
         (some? file-match)
         (let [file-id   (util/uuid (get file-match 1))
@@ -108,6 +108,20 @@
         :else
         (ring-handler req)))))
 
+(defn wrap-run-output-files [ring-handler]
+  (fn [{:keys [uri anti-forgery-token] :as req}]
+    (let [m (re-matches #"/runs/(.*)/output-files/(.*)" uri)]
+      (cond
+        (some? m)
+        (let [run-id   (util/uuid (get m 1))
+              rel-path (get m 2)
+              file     (io/file (run/get-run-path run-id) "output_files" rel-path)]
+          (log/info "Serving " file "...")
+          (file-response (.getPath file)))
+
+        :else
+        (ring-handler req)))))
+
 (defstate middleware
   :start
   (let [defaults-config (:ring.middleware/defaults-config config)
@@ -115,6 +129,7 @@
     (-> ;; not-found-handler
       (wrap-html-routes identity)
       wrap-download-file
+      wrap-run-output-files
       (wrap-api "/api")
       (fu/wrap-mutation-file-uploads {})
       fsm/wrap-transit-params

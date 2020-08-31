@@ -36,20 +36,20 @@
                  :jvm-opts    ["-XX:-OmitStackTraceInFastThrow"]
                  :extra-deps  {
                                ;; These are either for the editor or cljs
-                               org.clojure/clojurescript       {:mvn/version "1.10.758"}
-                               thheller/shadow-cljs            {:mvn/version "2.9.10"}
-                               expound                         {:mvn/version "0.7.2"}
-                               fulcrologic/fulcro-spec         {:mvn/version "3.1.4"}
                                binaryage/devtools              {:mvn/version "1.0.2"}
-                               nubank/workspaces               {:mvn/version "1.0.15"}
-                               org.clojure/tools.namespace     {:mvn/version "0.3.1"}
-                               com.cognitect/transit-cljs      {:mvn/version "0.8.264"}
-                               nrepl/nrepl                     {:mvn/version "0.7.0"}
+                               cider/cider-nrepl               {:mvn/version "0.25.1"}
                                clj-commons/pomegranate         {:mvn/version "1.2.0"}
+                               com.cognitect/transit-cljs      {:mvn/version "0.8.264"}
                                com.fzakaria/slf4j-timbre       {:mvn/version "0.3.19"}
                                com.gfredericks/clj-usage-graph {:mvn/version "0.3.0"} ;for generating graph
+                               expound                         {:mvn/version "0.7.2"}
+                               fulcrologic/fulcro-spec         {:mvn/version "3.1.4"}
+                               nrepl/nrepl                     {:mvn/version "0.7.0"}
+                               nubank/workspaces               {:mvn/version "1.0.15"}
+                               org.clojure/clojurescript       {:mvn/version "1.10.758"}
+                               org.clojure/tools.namespace     {:mvn/version "0.3.1"}
                                refactor-nrepl                  {:mvn/version "2.5.0"}
-                               cider/cider-nrepl               {:mvn/version "0.25.1"}
+                               thheller/shadow-cljs            {:mvn/version "2.9.10"}
                                }}
 
            :ancient {:main-opts  ["-m" "deps-ancient.deps-ancient"]

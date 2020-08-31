@@ -16,7 +16,9 @@
             [clojure.core.async :as async :refer [<! >! <!! >!!]]
             [app.model.run      :as run]
             [app.model.mock-database :refer [conn]]
-            [app.model.file     :as file]))
+            [app.model.file     :as file]
+            [app.util :as util]
+            [me.raynes.fs :as fs]))
 
 (defn lazy-output->str
   [s]
@@ -66,13 +68,14 @@
 
           ;; begin work at `pwd`
           ;; ------------------------------------------------------------------------------
+          (fs/sym-link (io/file pwd "bin") (util/resource-testy "workflow/bin"))
           (let [p (cl/proc
-                    (.getPath (io/resource "workflow/test.sh"))
+                    (.getPath (util/resource-testy "workflow/test.sh"))
                     ;; "nextflow"
-                    ;; "-C" (.getPath (io/resource "workflow/cloud.config"))
+                    ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
                     ;; "run"
                     ;; "-ansi-log" "false"
-                    ;; (.getPath (io/resource "workflow/cloud.groovy"))
+                    ;; (.getPath (util/resource-testy "workflow/cloud.groovy"))
                     :dir pwd)]
             (cl/stream-to p :out (io/file pwd "stdout"))
             (cl/stream-to p :err (io/file pwd "stderr")))
@@ -89,27 +92,9 @@
                                :run/output-files (vec registered-files)}]))
 
           (catch Exception e
-            (log/spy e)
-            (log/spy (class e))
-            (log/spy (= clojure.lang.ExceptionInfo (class e)))
-            (cond
-              (= clojure.lang.ExceptionInfo (class e))
-              (let [edata (ex-data e)
-                    msg   (str/join "\n" [
-                                          "An error occurred."
-                                          "------------------"
-                                          (str "Exit code: " @(:exit-code edata))
-                                          (str "Stdout: " (lazy-output->str (:stdout edata)))
-                                          (str "Stderr: " (lazy-output->str (:stderr edata)))])]
-                (log/spy msg)
-                (d/transact conn [{:run/id      run-id
-                                   :run/status  :failed
-                                   :run/message msg}]))
-
-              :else
-              (d/transact conn [{:run/id      run-id
-                                 :run/status  :failed
-                                 :run/message (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception e))}])))))))
+            (d/transact conn [{:run/id      run-id
+                               :run/status  :failed
+                               :run/message (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception e))}]))))))
 
   ;; (d/transact conn [{:account}])
   )
@@ -278,7 +263,6 @@
     (rmq/close ch-pub)
     (rmq/close ch-sub)
     (rmq/close rmq-conn))
-
   )
 
 

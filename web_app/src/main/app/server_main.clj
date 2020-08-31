@@ -1,6 +1,5 @@
 (ns app.server-main
   (:require [mount.core :as mount]
-            app.jrd.jrd
             app.server-components.http-server)
   (:gen-class))
 

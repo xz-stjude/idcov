@@ -11,7 +11,7 @@
    [com.fulcrologic.fulcro.application :as app]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro-css.css :as css]
-   [com.fulcrologic.fulcro.dom :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre]]
+   [com.fulcrologic.fulcro.dom :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre iframe]]
    [com.fulcrologic.fulcro.dom.events :as evt]
    [com.fulcrologic.fulcro.dom.html-entities :as ent]
    [com.fulcrologic.fulcro.mutations :as m]
@@ -53,7 +53,7 @@
          :else                                   (i :.large.icon.file))
        (div :.content
             (div :.header
-                 (a {:href (str "/file/" id "/download") :data-pushy-ignore true} (str name " (" (filesize size) ")")))
+                 (a {:href (str "/files/" id "/download") :data-pushy-ignore true} (str name " (" (filesize size) ")")))
             (div :.description (str id)))))
 
 (def ui-file (comp/factory File {:keyfn :file/id}))
@@ -112,6 +112,10 @@
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (div :.description (str id))
+              (when (= :succeeded status)
+                (div :.ui.segment
+                     (h4 :.ui.header "Report")
+                     (iframe {:width 1000:height 500 :frameBorder 0 :src (str "/runs/" id "/output-files/index.html")})))
               (when (= :succeeded status)
                 (div :.list
                      (map ui-file (sort-by #(:file/name %) output-files))))

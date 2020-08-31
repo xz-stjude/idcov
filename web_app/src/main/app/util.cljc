@@ -1,19 +1,28 @@
 (ns app.util
   #?(:cljs (:refer-clojure :exclude [uuid]))
   (:require [com.fulcrologic.guardrails.core :refer [>defn]]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.java.io :as io]))
 
-(>defn uuid
+(defn uuid
   "Generate a UUID the same way via clj/cljs.  Without args gives random UUID. With args, builds UUID based on input (which
   is useful in tests)."
-  #?(:clj ([] [=> uuid?] (java.util.UUID/randomUUID)))
+  #?(:clj ([] (java.util.UUID/randomUUID)))
   #?(:clj ([int-or-str]
-           [(s/or :i int? :s string?) => uuid?]
            (if (int? int-or-str)
              (java.util.UUID/fromString
                (format "ffffffff-ffff-ffff-ffff-%012d" int-or-str))
              (java.util.UUID/fromString int-or-str))))
-  #?(:cljs ([] [=> uuid?] (random-uuid)))
+
+  #?(:cljs ([] (random-uuid)))
   #?(:cljs ([& args]
-            [(s/* any?) => uuid?]
             (cljs.core/uuid (apply str args)))))
+
+#?(:clj
+   (defn resource-testy
+     [n]
+     "Like io/resource, but throws out an error when the requested resource does not exist (rather than silently returns a null)."
+     (let [res (io/resource n)]
+       (if (nil? res)
+         (throw (ex-info "The requested resource does not exist." {:resource-name n}))
+         res))))

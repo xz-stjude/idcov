@@ -29,8 +29,7 @@
                                                                                (-> env
                                                                                    (uism/activate :state/stopped)))}
                                                  :event/tick {::uism/handler (fn [env]
-                                                                               (log/debug "tick!")
-                                                                               (log/spy (uism/retrieve env :tick-fn))
+                                                                               (log/info "Auto-refresh.")
                                                                                ((uism/retrieve env :tick-fn))
                                                                                ;; (log/debug "Done!")
                                                                                (-> env

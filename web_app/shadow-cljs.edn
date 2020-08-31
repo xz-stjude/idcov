@@ -1,7 +1,7 @@
 {:deps   {:aliases [:dev]}
  :nrepl  {:port       9000
           :middleware [refactor-nrepl.middleware/wrap-refactor]
-          :init-fn    user}
+          :init-ns    user}
  :builds {:main {:target     :browser
                  :output-dir "resources/public/js/main"
                  :asset-path "/js/main"

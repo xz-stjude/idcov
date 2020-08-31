@@ -1,15 +1,15 @@
 (ns user
   (:require
-   [clojure.tools.namespace.repl :as tools-ns :refer [set-refresh-dirs]]
+   [clojure.tools.namespace.repl :as tools-ns]
    [expound.alpha :as expound]
    [clojure.spec.alpha :as s]
    [mount.core :as mount]
    ;; this is the top-level dependent component...mount will find the rest via ns requires
-   app.server-components.http-server
-   app.jrd.jrd))
+   app.jrd.jrd
+   app.server-components.http-server))
 
 ;; ==================== SERVER ====================
-(set-refresh-dirs "src/main" "src/dev" "src/test")
+(tools-ns/set-refresh-dirs "src/main" "src/dev" "src/test")
 ;; Change the default output of spec to be more readable
 (alter-var-root #'s/*explain-out* (constantly expound/printer))
 
@@ -33,4 +33,5 @@
   []
   (stop)
   (tools-ns/refresh :after 'user/start))
+
 

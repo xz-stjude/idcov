@@ -19,4 +19,6 @@
 (comment
   (mount/start #'http-server)
 
+  (mount/stop #'http-server)
+
   )
