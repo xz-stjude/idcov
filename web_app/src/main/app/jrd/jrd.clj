@@ -18,7 +18,8 @@
             [app.model.mock-database :refer [conn]]
             [app.model.file     :as file]
             [app.util :as util]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs]
+            [app.server-components.config :refer [config]]))
 
 (defn lazy-output->str
   [s]
@@ -74,7 +75,10 @@
           (doseq [f (.listFiles (io/file (util/resource-testy "workflow")))]
             (fs/sym-link (io/file pwd (.getName f)) f))
 
-          (let [p (cl/proc "make" :dir pwd)]
+          (let [p (cl/proc "make"
+                           :dir pwd
+                           :env {"CHEETAH_REFS_DIR"  (:refs-path config)
+                                 "CHEETAH_CACHE_DIR" (:cache-path config)})]
             ;; (.getPath (util/resource-testy "workflow/test.sh"))
             ;; "nextflow"
             ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
@@ -107,6 +111,7 @@
 
 
           (catch Exception e
+            (log/error e)
             (d/transact conn [{:run/id      run-id
                                :run/status  :failed
                                :run/message (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception e))}]))))))
@@ -114,16 +119,30 @@
   ;; (d/transact conn [{:account}])
   )
 
+(defn ensure-refs
+  []
+  (let [{:keys [refs-path]} config]
+    (fs/mkdirs (io/file refs-path))
+    (let [refs (.listFiles (io/file (util/resource-testy "refs")))]
+      (doseq [ref refs]
+        (try
+          (let [ref-path (io/file refs-path (.getName ref))]
+            (fs/sym-link ref-path ref)
+            (log/info (format "Symlink %s -> %s" ref ref-path)))
+          (catch java.nio.file.FileAlreadyExistsException e nil))))))
+
 (defstate jrd
-  :start (let [exit-ch (async/chan)]
-           (async/go-loop []
-             (async/alt!
-               (async/go
-                 (let [timeout-ch (async/timeout 1000)]
-                   (work)
-                   (<! timeout-ch))) (recur)
-               exit-ch nil))
-           exit-ch)
+  :start (do
+           (ensure-refs)
+           (let [exit-ch (async/chan)]
+             (async/go-loop []
+               (async/alt!
+                 (async/go
+                   (let [timeout-ch (async/timeout 1000)]
+                     (work)
+                     (<! timeout-ch))) (recur)
+                 exit-ch nil))
+             exit-ch))
   :stop (async/put! jrd true))
 
 

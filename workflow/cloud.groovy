@@ -172,6 +172,25 @@ process collect_all_samples {
 }
 
 
+process generate_report {
+
+  conda 'r::r r::r-rmarkdown r::r-tidyverse conda-forge::pandoc'
+
+    input:
+    file _
+
+    output:
+    file "index.html"
+
+    publishDir params.result_folder
+
+    script:
+    """
+      cp ${params.refs_dir}/generate_report.Rmd ./
+      Rscript -e "rmarkdown::render('generate_report.Rmd', output_format='html_document', output_dir='.', output_file='index.html')"
+    """
+}
+
 workflow {
     bwa(reference_indexes, ch_fagz)
     samtools_index(bwa.out)
@@ -180,4 +199,5 @@ workflow {
     get_coverage_of_markers(samtools_index.out)
     compare_mutations(get_coverage_of_markers.out.join(freebayes.out))
     collect_all_samples(compare_mutations.out.collect())
+    generate_report(collect_all_samples.out)
 }

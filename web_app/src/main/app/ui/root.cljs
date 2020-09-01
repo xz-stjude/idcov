@@ -113,9 +113,10 @@
                    )
               (div :.description (str id))
               (when (= :succeeded status)
-                (div :.ui.segment
-                     (h4 :.ui.header "Report")
-                     (iframe {:width 1000:height 500 :frameBorder 0 :src (str "/runs/" id "/output-files/index.html")})))
+                (let [report-url (str "/runs/" id "/output-files/index.html")]
+                  (div :.ui.segment
+                       (h4 :.ui.header (a {:href report-url :data-pushy-ignore true} "Report"))
+                       (iframe {:width 1000:height 500 :frameBorder 0 :src report-url}))))
               (when (= :succeeded status)
                 (div :.list
                      (map ui-file (sort-by #(:file/name %) output-files))))

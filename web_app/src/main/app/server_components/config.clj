@@ -50,6 +50,7 @@
            config-map))
 
 (comment
+  (mount/start #'config)
 
   (log/debug "afdasfdf")
   )
