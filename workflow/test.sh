@@ -9,14 +9,17 @@ sleep 1
 mkdir output_files
 
 echo "Start! (error)" >&2
+sleep 1
 echo "conda -V >> output_files/info.txt"
 conda -V >> output_files/info.txt
 
 echo "Start! (error)" >&2
+sleep 1
 echo "tree >> output_files/info.txt"
 tree >> output_files/info.txt
 
 echo "Start! (error)" >&2
+sleep 1
 echo "cat /dev/urandom | head -c 1024 | xxd >> output_files/info.txt"
 cat /dev/urandom | head -c 1024 | xxd > output_files/info.txt
 

@@ -66,8 +66,9 @@
           (log/info "found job:" (str pwd))
           (d/transact conn [[:db/cas [:run/id run-id] :run/status :initiated :running]])
 
-          ;; begin work at `pwd`
-          ;; ------------------------------------------------------------------------------
+
+          ;; --------------------------------------------------------------------------------
+          ;; NOTE: begin work at `pwd`
           (fs/sym-link (io/file pwd "bin") (util/resource-testy "workflow/bin"))
           (let [p (cl/proc
                     (.getPath (util/resource-testy "workflow/test.sh"))
@@ -77,19 +78,30 @@
                     ;; "-ansi-log" "false"
                     ;; (.getPath (util/resource-testy "workflow/cloud.groovy"))
                     :dir pwd)]
-            (cl/stream-to p :out (io/file pwd "stdout"))
-            (cl/stream-to p :err (io/file pwd "stderr")))
-          ;; ------------------------------------------------------------------------------
-          ;; end work
+            (async/go (cl/stream-to p :out (io/file pwd "stdout")))
+            (async/go (cl/stream-to p :err (io/file pwd "stderr")))
 
-          ;; TODO: Throw an error if necessary output-files do not exist
+            ;; TODO: make the wait time configurable
+            (let [ec (cl/exit-code p (* 1000 60 60 24))]
+              ;; NOTE: the above line blocks until the subprocess finishes
 
-          ;; register all files in the pwd/output_files folder
-          (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output_files")))
-                registered-files (map (fn [f] (file/register-file conn f)) output-files)]
-            (d/transact conn [{:run/id           run-id
-                               :run/status       :succeeded
-                               :run/output-files (vec registered-files)}]))
+              ;; TODO: Throw an error if necessary output-files do not exist
+
+              (if (= 0 ec)
+                ;; register all files in the pwd/output_files folder
+                (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output_files")))
+                      registered-files (map (fn [f] (file/register-file conn f)) output-files)]
+                  (d/transact conn [{:run/id           run-id
+                                     :run/status       :succeeded
+                                     :run/output-files (vec registered-files)}]))
+
+                ;; The exit code is not zero. Report as a failure
+                (d/transact conn [{:run/id      run-id
+                                   :run/status  :failed
+                                   :run/message (format "The worker returned a non-zero exit code: %d" ec)}])
+                )))
+          ;; --------------------------------------------------------------------------------
+
 
           (catch Exception e
             (d/transact conn [{:run/id      run-id
@@ -102,9 +114,11 @@
 (defstate jrd
   :start (let [exit-ch (async/chan)]
            (async/go-loop []
-             (work)
              (async/alt!
-               (async/timeout 1000) (recur)
+               (async/go
+                 (let [timeout-ch (async/timeout 1000)]
+                   (work)
+                   (<! timeout-ch))) (recur)
                exit-ch nil))
            exit-ch)
   :stop (async/put! jrd true))
@@ -116,6 +130,21 @@
   (mount/stop #'jrd)
 
   (mount/start #'jrd)
+
+  (def x
+    (let [exit-ch (async/chan)]
+      (async/go-loop []
+        (async/alt!
+          (async/go
+            (log/debug "Start!")
+            (Thread/sleep 5000)
+            (log/debug "Done!")
+            (Thread/sleep 1000)) (recur)
+
+          exit-ch                 nil))
+      exit-ch))
+
+  (async/put! x true)
 
 
   (try
@@ -258,6 +287,11 @@
     (doseq [i (range 20)]
       (lb/publish ch-pub "" qname "Hello!" {:content-type "text/plain" :type "greetings.hi"}))
     )
+
+  (<!! (async/go
+         (let [ch (async/timeout 1000)]
+           (Thread/sleep 2000)
+           (<! ch))))
 
   (do
     (rmq/close ch-pub)

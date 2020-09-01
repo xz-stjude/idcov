@@ -155,7 +155,7 @@ process compare_mutations {
 
 process collect_all_samples {
 
-  conda 'r::r r::r-tidyverse'
+  conda 'r::r r::r-tidyverse r::r-rmarkdown'
 
     input:
     file _
