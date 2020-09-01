@@ -69,15 +69,18 @@
 
           ;; --------------------------------------------------------------------------------
           ;; NOTE: begin work at `pwd`
-          (fs/sym-link (io/file pwd "bin") (util/resource-testy "workflow/bin"))
-          (let [p (cl/proc
-                    (.getPath (util/resource-testy "workflow/test.sh"))
-                    ;; "nextflow"
-                    ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
-                    ;; "run"
-                    ;; "-ansi-log" "false"
-                    ;; (.getPath (util/resource-testy "workflow/cloud.groovy"))
-                    :dir pwd)]
+
+          ;; Link the workflow directory into the pwd
+          (doseq [f (.listFiles (io/file (util/resource-testy "workflow")))]
+            (fs/sym-link (io/file pwd (.getName f)) f))
+
+          (let [p (cl/proc "make" :dir pwd)]
+            ;; (.getPath (util/resource-testy "workflow/test.sh"))
+            ;; "nextflow"
+            ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
+            ;; "run"
+            ;; "-ansi-log" "false"
+            ;; (.getPath (util/resource-testy "workflow/cloud.groovy"))
             (async/go (cl/stream-to p :out (io/file pwd "stdout")))
             (async/go (cl/stream-to p :err (io/file pwd "stderr")))
 
@@ -292,6 +295,15 @@
          (let [ch (async/timeout 1000)]
            (Thread/sleep 2000)
            (<! ch))))
+
+  (str/join " "
+            ["nextflow"
+             "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
+             "run"
+             "-ansi-log" "false"
+             (.getPath (util/resource-testy "workflow/cloud.groovy"))])
+
+  
 
   (do
     (rmq/close ch-pub)

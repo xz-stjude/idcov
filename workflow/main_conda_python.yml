@@ -1,8 +1,0 @@
-name: idcov-python
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - conda-forge::python=3
-  - conda-forge::fire
-  - conda-forge::biopython
