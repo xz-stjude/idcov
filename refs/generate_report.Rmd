@@ -11,28 +11,29 @@ all_samples_score_df <- read_csv('all_samples_score_df.csv')
 all_samples_mutation_wide <- read_csv('all_samples_mutation_wide.csv')
 ```
 
-All samples calls:
+## Calls
 
 ```{r all_samples_score_df, echo=FALSE}
 knitr::kable(all_samples_score_df)
 ```
 
-All samples details:
-
-```{r all_samples, echo=FALSE}
-knitr::kable(all_samples)
-```
-
-All sample mutations:
-
-```{r all_samples_mutation_wide, echo=FALSE}
-knitr::kable(all_samples_mutation_wide)
-```
-
-## Including Plots
+## Phylogeny
 
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
 ```
+
+## Mutations
+
+```{r all_samples_mutation_wide, echo=FALSE}
+knitr::kable(all_samples_mutation_wide)
+```
+
+## Details
+
+```{r all_samples, echo=FALSE}
+knitr::kable(all_samples)
+```
+
