@@ -112,7 +112,6 @@
                           :file/size filesize}])
 
        (when (= java.util.UUID (class project-id))
-         (log/debug "YES!!")
          (d/transact conn [{:project/id    project-id
                             :project/files [{:file/id file-id}]}]))
 
@@ -146,6 +145,11 @@
 
 (comment
   (refresh-file-cache)
+
+  (register-file conn "/data/1000/home/tmp/covid_samples/VIC4750_R1.fastq.gz" {:project-id #uuid "a86dc6da-321e-4afe-a8fa-be00bd30e187"})
+
+  (doseq [f (.listFiles (io/file "/data/1000/home/tmp/covid_samples/new2"))]
+    (register-file conn f {:project-id #uuid "b904fb5b-e89e-40ed-8dfe-44bd9cd29eab"}))
 
   )
 
