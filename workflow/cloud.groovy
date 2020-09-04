@@ -148,7 +148,8 @@ process compare_mutations {
 
     script:
     """
-      merge_mutations.r ${sample_id}_coverage.bed ${sample_id}.vcf ${params.marker_ref} ${params.strain_ref} ${sample_id}_scores_vs_strains.csv ${sample_id}_markers.csv
+      ln -s ${baseDir}/bin/merge_mutations.r ./
+      Rscript merge_mutations.r ${sample_id}_coverage.bed ${sample_id}.vcf ${params.marker_ref} ${params.strain_ref_prefix} ${sample_id}_scores_vs_strains.csv ${sample_id}_markers.csv ${baseDir}/refs/naming_systems.csv
     """
 }
 
@@ -186,7 +187,7 @@ process generate_report {
 
     script:
     """
-      cp ${baseDir}/refs/generate_report.Rmd ./
+      cp -f ${baseDir}/refs/generate_report.Rmd ./
       Rscript -e "rmarkdown::render('generate_report.Rmd', output_format='html_document', output_dir='.', output_file='index.html')"
     """
 }

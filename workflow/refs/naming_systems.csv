@@ -1,4 +1,4 @@
 naming_system,id,link_to_nextstrain
 GISAID,gisaid,https://nextstrain.org/ncov/global?c=GISAID_clade
-"Old Nextstrain",old_next_strain,https://nextstrain.org/ncov/global?c=legacy_clade_membership
-"New Nextstrain",new_next_strain,https://nextstrain.org/ncov/global?c=clade_membership
+"Old Nextstrain",old_nextstrain,https://nextstrain.org/ncov/global?c=legacy_clade_membership
+"New Nextstrain",new_nextstrain,https://nextstrain.org/ncov/global?c=clade_membership
