@@ -1,0 +1,4 @@
+naming_system,phylogenetic_figure,link_to_nextstrain
+GISAID,gisaid.png,https://nextstrain.org/ncov/global?c=GISAID_clade
+"Old Nextstrain",old_next_strain.png,https://nextstrain.org/ncov/global?c=legacy_clade_membership
+"New Nextstrain",new_next_strain.png,https://nextstrain.org/ncov/global?c=clade_membership

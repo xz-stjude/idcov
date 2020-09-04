@@ -1,0 +1,27 @@
+	241	1059	3037	8782	11083	14408	14805	17747	17858	18060	23403	25563	26144	28144	28881	28882	28883
+A1a	C	C	C	C	G	C	T	C	A	C	A	G	T	T	G	G	G
+A1b	C	C	C	C	G	C	C	C	A	C	A	G	G	T	G	G	G
+A1c	C	C	C	C	G	C	C	C	A	C	A	G	G	T	G	G	G
+A1d	C	C	C	C	G	C	C	C	A	C	A	G	G	T	G	G	G
+A2	T	C	T	C	G	C	C	C	A	C	G	G	G	T	G	G	G
+A2a1	T	C	T	C	G	T	C	C	A	C	G	G	G	T	A	A	C
+A2a2	T	C	T	C	G	T	C	C	A	C	G	G	G	T	G	G	G
+A2a3	T	T	T	C	G	T	C	C	A	C	G	T	G	T	G	G	G
+A3	C	C	C	C	T	C	C	C	A	C	A	G	G	T	G	G	G
+A6	C	C	C	C	G	C	C	C	A	C	A	G	G	T	G	G	G
+B	C	C	C	T	G	C	C	C	A	C	A	G	G	T	G	G	G
+B1	C	C	C	T	G	C	C	T	G	T	A	G	G	C	G	G	G
+B4	C	C	C	T	G	C	C	C	A	C	A	G	G	T	G	G	G
+																	
+19A	C	C	C	C		C					A	G		T	G	G	G
+19B	C	C	C	T		C					A	G		C	G	G	G
+20A	T	C	T	C		T					G	T		T	G	G	G
+20B	T	C	T	C		T					G	G		T	A	A	C
+20C	T	T	T	C		T					G	T		T	G	G	G
+																	
+L	C		C	C	G						A	G	G	T		G	
+S	C		C	T	G						A	G	G	C		G	
+V	C		C	C	T						A	G	T	T		G	
+G	T		T	C	G						G	G	G	T		G	
+GR	T		T	C	G						G	G	G	T		A	
+GH	T		T	C	G						G	T	G	T		G	

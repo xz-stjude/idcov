@@ -72,13 +72,19 @@
           ;; NOTE: begin work at `pwd`
 
           ;; Link the workflow directory into the pwd
-          (doseq [f (.listFiles (io/file (util/resource-testy "workflow")))]
-            (fs/sym-link (io/file pwd (.getName f)) f))
+          (let [path-to-workflow (io/file (util/resource-testy "workflow"))]
+            (doseq [f (.listFiles path-to-workflow)]
+              (let [fname (.getName f)]
+                (if (not= "Makefile" fname)
+                  (fs/sym-link (io/file pwd fname) f)
+                  (let [env-exports      (str/join "\n" (map (fn [[k v]] (format "export %s=%s" k v))
+                                                             {"CHEETAH_REFS_DIR"  (:refs-path config)
+                                                              "CHEETAH_CACHE_DIR" (:cache-path config)}))
+                        makefile-content (slurp (io/file path-to-workflow "Makefile"))
+                        combined-content (str env-exports "\n\n" makefile-content)]
+                    (spit (io/file pwd fname) combined-content))))))
 
-          (let [p (cl/proc "make"
-                           :dir pwd
-                           :env {"CHEETAH_REFS_DIR"  (:refs-path config)
-                                 "CHEETAH_CACHE_DIR" (:cache-path config)})]
+          (let [p (cl/proc "make" :dir pwd)]
             ;; (.getPath (util/resource-testy "workflow/test.sh"))
             ;; "nextflow"
             ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
