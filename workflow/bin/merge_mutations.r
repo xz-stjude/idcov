@@ -69,6 +69,19 @@ strains_df <-
   ## read_tsv('./7-strains/strains.txt') %>%
   read_tsv(args[4]) %>%
   print
+##  clade 241 1059 3037 8782 11083 23403 25563 26144 28144 28882
+##  L     C        C    C    G     A     G     G     T     G
+##  S     C        C    T    G     A     G     G     C     G
+##  V     C        C    C    T     A     G     T     T     G
+##  G     T        T    C    G     G     G     G     T     G
+##  GR    T        T    C    G     G     G     G     T     A
+##  GH    T        T    C    G     G     T     G     T     G
+
+
+## naming_system  id              link_to_nextstrain
+## GISAID         gisaid          https://nextstrain.org/ncov/global?c=GISAID_clade
+## Old Nextstrain old_next_strain https://nextstrain.org/ncov/global?c=legacy_clade_membership
+## New Nextstrain new_next_strain https://nextstrain.org/ncov/global?c=clade_membership
 
 scores_list <- list()
 for (strain in c("A1a", "A1b", "A1c", "A1d", "A2", "A2a1", "A2a2", "A2a3", "A3", "A6", "B", "B1", "B4")) {

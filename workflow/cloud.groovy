@@ -186,7 +186,7 @@ process generate_report {
 
     script:
     """
-      cp ${params.refs_dir}/generate_report.Rmd ./
+      cp ${baseDir}/refs/generate_report.Rmd ./
       Rscript -e "rmarkdown::render('generate_report.Rmd', output_format='html_document', output_dir='.', output_file='index.html')"
     """
 }

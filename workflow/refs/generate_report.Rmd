@@ -25,7 +25,7 @@ You can also embed plots, for example:
 plot(pressure)
 ```
 
-## Mutations
+## Coverage and Mutations
 
 ```{r all_samples_mutation_wide, echo=FALSE}
 knitr::kable(all_samples_mutation_wide)
