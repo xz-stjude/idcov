@@ -136,7 +136,7 @@ process get_coverage_of_markers {
 
 process compare_mutations {
 
-  conda 'r::r r::r-tidyverse'
+  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
 
     input:
     tuple sample_id, file(_), file(_)
@@ -156,7 +156,7 @@ process compare_mutations {
 
 process collect_all_samples {
 
-  conda 'r::r r::r-tidyverse r::r-rmarkdown'
+  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0 conda-forge::r-rmarkdown'
 
     input:
     file _
@@ -168,14 +168,15 @@ process collect_all_samples {
 
     script:
     """
-      combine_samples.r
+      ln -s ${baseDir}/bin/combine_samples.r ./
+      Rscript combine_samples.r
     """
 }
 
 
 process generate_report {
 
-  conda 'r::r r::r-rmarkdown r::r-tidyverse conda-forge::pandoc'
+  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-rmarkdown conda-forge::r-tidyverse=1.3.0 conda-forge::pandoc'
 
     input:
     file _

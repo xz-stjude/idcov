@@ -101,12 +101,8 @@
               ;; TODO: Throw an error if necessary output-files do not exist
 
               (if (= 0 ec)
-                ;; register all files in the pwd/output_files folder
-                (let [output-files     (filter #(.isFile %) (file-seq (io/file pwd "output_files")))
-                      registered-files (map (fn [f] (file/register-file conn f)) output-files)]
-                  (d/transact conn [{:run/id           run-id
-                                     :run/status       :succeeded
-                                     :run/output-files (vec registered-files)}]))
+                (d/transact conn [{:run/id     run-id
+                                   :run/status :succeeded}])
 
                 ;; The exit code is not zero. Report as a failure
                 (d/transact conn [{:run/id      run-id

@@ -3,7 +3,8 @@
             [datahike.api :as d]
             [datahike.migrate :as dm]
             [mount.core :refer [defstate]]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [mount.core :as mount]))
 
 
 (def db-schema
@@ -118,6 +119,9 @@
 (comment
   (user/restart)
 
+  (mount/stop #'conn)
+  (mount/start #'conn)
+
   (d/database-exists? cfg)
   (d/connect cfg)
 
@@ -130,6 +134,12 @@
   ;;                    :db/valueType   :db.type/string}])
 
   (d/datoms @conn :eavt)
+
+  (filter #(= #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d" (nth % 2)) (d/datoms @conn :eavt))
+  (filter #(= #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d" (nth % 2)) (d/datoms @conn :avet))
+
+  (filter #(= #uuid "ed7feec9-6190-4448-80de-de6066a6fab2" (nth % 2)) (d/datoms @conn :eavt))
+  (filter #(= #uuid "ed7feec9-6190-4448-80de-de6066a6fab2" (nth % 2)) (d/datoms @conn :avet))
 
   (let [cfg {:store {:backend :file
                      :path    (:db-location config)}}]
@@ -214,10 +224,16 @@
                                                                :file/name
                                                                :file/size]}]}]) ...]
          :where
-         [?e :account/email "zhuxun2@gmail.com"]
+         [?e :account/email "gang.wu@stjude.org"]
          ;; [?e :account/id]
          ]
        @conn)
+
+  (d/transact conn [{:db/id     "hello"
+                     :file/id   #uuid "8a369d70-17a9-447e-9870-e42487138dab"
+                     :file/name "asdf"
+                     :file/size 888}
+                    nil])
 
   (d/q '[:find [(pull ?run [:run/id
                             :run/status
@@ -226,6 +242,44 @@
          [?run :run/id #uuid "0669e62f-96f4-4885-908d-34e894ac8685"]
          ]
        @conn)
+
+  (let [ids (filter #(= #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d" %)
+                    (d/q '[:find [?id ...]
+                           :where
+                           [?file :file/id ?id]
+                           ]
+                         @conn))]
+    (for [id ids]
+      (d/q '[:find [(pull ?file [:file/id
+                                 :file/name
+                                 :file/size]) ...]
+             :in $ ?id
+             :where
+             [?file :file/id ?id]
+             ]
+           @conn id)))
+
+  (d/q '[:find [(pull ?file [:file/id
+                             :file/name
+                             :file/size]) ...]
+         :in $ ?id
+         :where
+         [?file :file/id ?id]
+         ]
+       @conn id)
+
+  (d/q '[:find [(pull ?file [:file/id
+                             :file/name
+                             :file/size]) ...]
+         :in $ ?id
+         :where
+         [?file :file/id ?id]
+         ]
+       @conn #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d")
+
+  (let [x #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d"]
+    (d/pull @conn [:file/id] [:file/id x]))
+
   ;; nested query to get the top items
   (d/q '[:find ?project-id ?txInstant
          ;; :keys #_project-id creation-inst

@@ -81,12 +81,11 @@
 
 
 (defsc RunItem [this
-                {:run/keys [id name status message output-files stdout stderr]}
+                {:run/keys [id name status message stdout stderr]}
                 {:keys [stop-run retract-run remove-run]}]
   {:ident         :run/id
    :query         [:run/id :run/name :run/status
-                   :run/message :run/stdout :run/stderr
-                   {:run/output-files (comp/get-query File)}]
+                   :run/message :run/stdout :run/stderr]
    :initial-state {}
    :css           [[:.retracted {:text-decoration "line-through"
                                  :opacity         0.3}]
@@ -117,9 +116,6 @@
                   (div :.ui.segment
                        (h4 :.ui.header (a {:href report-url :data-pushy-ignore true} "Report"))
                        (iframe {:width 1000:height 500 :frameBorder 0 :src report-url}))))
-              (when (= :succeeded status)
-                (div :.list
-                     (map ui-file (sort-by #(:file/name %) output-files))))
               (when (seq message)
                 (div :.ui.segment
                      (h4 :.ui.header "Message")

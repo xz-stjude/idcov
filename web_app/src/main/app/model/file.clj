@@ -104,16 +104,16 @@
                      (fs/copy+ file dest-file)
                      (fs/delete file)))
 
-       (d/transact conn [{:file/id   file-id
+       (d/transact conn [{:db/id     "new_file"
+                          :file/id   file-id
                           :file/name filename_
                           ;; File size is stored directly into the database because
                           ;; we would like to minimize the access to the file system,
                           ;; since it is something many frontend views would ask for.
-                          :file/size filesize}])
-
-       (when (= java.util.UUID (class project-id))
-         (d/transact conn [{:project/id    project-id
-                            :project/files [{:file/id file-id}]}]))
+                          :file/size filesize}
+                         (when (= java.util.UUID (class project-id))
+                           {:project/id    project-id
+                            :project/files ["new_file"]})])
 
        {:file/id   file-id
         :file/name filename_
@@ -149,7 +149,7 @@
   (register-file conn "/data/1000/home/tmp/covid_samples/VIC4750_R1.fastq.gz" {:project-id #uuid "a86dc6da-321e-4afe-a8fa-be00bd30e187"})
 
   (doseq [f (.listFiles (io/file "/data/1000/home/tmp/covid_samples/new2"))]
-    (register-file conn f {:project-id #uuid "b904fb5b-e89e-40ed-8dfe-44bd9cd29eab"}))
+    (register-file conn f {:project-id #uuid "dc1077cb-fbba-4fda-bb51-87dc295fac61"}))
 
   )
 
