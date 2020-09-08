@@ -1,10 +1,14 @@
 ---
 title: "idCOV Report"
 output: html_document
+params:
+  base_dir: "../../.."
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(kableExtra)
+
 knitr::opts_chunk$set(echo = TRUE)
 all_samples <- read_csv('all_samples.csv')
 all_samples_score_df <- read_csv('all_samples_score_df.csv')
@@ -13,27 +17,49 @@ all_samples_mutation_wide <- read_csv('all_samples_mutation_wide.csv')
 
 ## Calls
 
+The lower the score, the more likely the sample is of that particular clade.
+
 ```{r all_samples_score_df, echo=FALSE}
-knitr::kable(all_samples_score_df)
+manhattan_wide <- all_samples_score_df %>%
+  group_by(sample_id, id) %>%
+  mutate(manhattan=if_else(manhattan == min(manhattan), cell_spec(manhattan, background='#ffcccc'), as.character(manhattan))) %>%
+  pivot_wider(sample_id, names_from=clade, values_from=manhattan)
+
+naming_system_labels <- all_samples_score_df %>%
+  group_by(sample_id) %>%
+  group_split %>%
+  .[[1]] %>%
+  .$id
+
+kbl(manhattan_wide, format='html', escape=F) %>%
+  add_header_above(c("", with(rle(naming_system_labels), set_names(lengths, values)))) %>%
+  kable_styling()
 ```
 
 ## Phylogeny
 
-You can also embed plots, for example:
+```{r message=F, echo=FALSE, results='asis'}
+work <- function(x, y) {
+  cat(str_c('### ', x$naming_system, '\n\n'))
+  cat(str_c('[![](', params$base_dir, '/refs/screenshots/', x$id, '.png)](', x$link_to_nextstrain, ')', '\n\n'))
+}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+read_csv(str_c(params$base_dir, "/refs/naming_systems.csv")) %>%
+  rowwise %>%
+  group_walk(work)
 ```
 
 ## Coverage and Mutations
 
 ```{r all_samples_mutation_wide, echo=FALSE}
-knitr::kable(all_samples_mutation_wide)
+kbl(all_samples_mutation_wide, format='html', escape=F) %>%
+  kable_styling()
 ```
 
 ## Details
 
 ```{r all_samples, echo=FALSE}
-knitr::kable(all_samples)
+knitr::kable(all_samples) %>%
+  kable_styling()
 ```
 
