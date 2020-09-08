@@ -70,18 +70,6 @@ for (i in seq_len(length(ids))) {
     ) %>%
       mutate(sample_id=str_match(score_filename, '^./(.*)_scores_vs_strains.csv$')[,2])
 
-    ## df <- read_csv(
-    ##     score_filename,
-    ##     col_types = cols(
-    ##         pos = col_integer(),
-    ##         n_covering_frags = col_double(),
-    ##         ref = col_character(),
-    ##         alt = col_character(),
-    ##         is_mutated = col_character()
-    ##     )
-    ## )
-    df$id <- ids[[i]]
-    ## df$score_filename <- score_filename
     score_df_list[[i]] <- df
 }
 
@@ -103,36 +91,22 @@ mutation_df_wide %>% write_csv("./all_samples_mutation_wide.csv", na = "")
 score_df <-
   bind_rows(score_df_list) %>%
 
-## # A tibble: 24 x 4
-##    id    clade manhattan sample_id
-##    <chr> <chr>     <int> <chr>
-##  1 NT05  L             1 NT05
-##  2 NT05  V             1 NT05
-##  3 NT05  S             3 NT05
-##  4 NT05  G             4 NT05
-##  5 NT05  GH            5 NT05
-##  6 NT05  GR            5 NT05
-##  7 NT05  19A           0 NT05
-##  8 NT05  19B           2 NT05
-##  9 NT05  20A           5 NT05
-## 10 NT05  20C           6 NT05
-## 11 NT05  20B           7 NT05
-## 12 NT05  A3            0 NT05
-## 13 NT05  A1b           1 NT05
-## 14 NT05  A1c           1 NT05
-## 15 NT05  A1d           1 NT05
-## 16 NT05  A6            1 NT05
-## 17 NT05  B             2 NT05
-## 18 NT05  B4            2 NT05
-## 19 NT05  A1a           3 NT05
-## 20 NT05  A2            4 NT05
-## 21 NT05  A2a2          5 NT05
-## 22 NT05  B1            6 NT05
-## 23 NT05  A2a3          7 NT05
-## 24 NT05  A2a1          8 NT05
+  ## # A tibble: 120 x 4
+  ##    id             clade manhattan sample_id
+  ##    <chr>          <chr>     <int> <chr>
+  ##  1 gisaid         L             1 SA01
+  ##  2 gisaid         G             2 SA01
+  ##  3 gisaid         GH            3 SA01
+  ##  4 gisaid         GR            3 SA01
+  ##  5 gisaid         S             3 SA01
+  ##  6 gisaid         V             3 SA01
+  ##  7 new_nextstrain 19A           1 SA01
+  ##  8 new_nextstrain 19B           3 SA01
+  ##  9 new_nextstrain 20A           4 SA01
+  ## 10 new_nextstrain 20C           5 SA01
+  ## # … with 110 more rows
 
   write_csv("./all_samples_score_df.csv", na='')
-
 
 ##   group_by(id) %>%
 ##   filter(min_rank(score) == 1) %>%

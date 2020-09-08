@@ -136,7 +136,7 @@ process get_coverage_of_markers {
 
 process compare_mutations {
 
-  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
+  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
 
     input:
     tuple sample_id, file(_), file(_)
@@ -156,7 +156,7 @@ process compare_mutations {
 
 process collect_all_samples {
 
-  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0 conda-forge::r-rmarkdown'
+  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0 conda-forge::r-rmarkdown'
 
     input:
     file _
@@ -176,7 +176,7 @@ process collect_all_samples {
 
 process generate_report {
 
-  conda 'conda-forge::r-base conda-forge::r-stringi conda-forge::r-rmarkdown conda-forge::r-tidyverse=1.3.0 conda-forge::pandoc'
+  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-rmarkdown conda-forge::r-tidyverse=1.3.0 conda-forge::pandoc conda-forge::r-kableextra'
 
     input:
     file _
