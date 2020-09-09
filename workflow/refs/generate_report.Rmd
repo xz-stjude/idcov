@@ -13,26 +13,55 @@ knitr::opts_chunk$set(echo = TRUE)
 all_samples <- read_csv('all_samples.csv')
 all_samples_score_df <- read_csv('all_samples_score_df.csv')
 all_samples_mutation_wide <- read_csv('all_samples_mutation_wide.csv')
+
+naming_systems <- read_csv(str_c(params$base_dir, "/refs/naming_systems.csv"))
+color_scheme <- read_csv(str_c(params$base_dir, "/refs/color_scheme.csv"))
 ```
 
 ## Calls
 
-The lower the score, the more likely the sample is of that particular clade.
+```{r calls_wide, echo=FALSE}
+calls_wide <- all_samples_score_df %>%
+  group_by(sample_id, id) %>%
+  filter(manhattan == min(manhattan)) %>%
+  arrange(clade) %>%
+  left_join(color_scheme, by=c(id='naming_system', 'clade')) %>%
+  mutate(clade=cell_spec(clade, background=color)) %>%
+  summarize(call=str_c(clade, collapse='/'), .groups='drop_last') %>%
+  left_join(naming_systems, by=c('id')) %>%
+  pivot_wider(sample_id, names_from=naming_system, values_from=call) %>%
+  rename(`Sample ID`='sample_id')
 
-```{r all_samples_score_df, echo=FALSE}
+kbl(calls_wide, format='html', escape=F) %>%
+  kable_styling()
+```
+
+## Call Manhattan Scores
+
+The lower the score, the more likely the sample is of that particular clade. The
+one called clade is highlighted.
+
+```{r manhattan_wide, echo=FALSE}
 manhattan_wide <- all_samples_score_df %>%
   group_by(sample_id, id) %>%
+  left_join(color_scheme, by=c(id='naming_system', 'clade')) %>%
+  mutate(clade=cell_spec(clade, background=color)) %>%
   mutate(manhattan=if_else(manhattan == min(manhattan), cell_spec(manhattan, background='#ffcccc'), as.character(manhattan))) %>%
-  pivot_wider(sample_id, names_from=clade, values_from=manhattan)
+  pivot_wider(sample_id, names_from=clade, values_from=manhattan) %>%
+  rename(`Sample ID`='sample_id')
 
 naming_system_labels <- all_samples_score_df %>%
   group_by(sample_id) %>%
   group_split %>%
   .[[1]] %>%
-  .$id
+  left_join(naming_systems, by=c('id')) %>%
+  .$naming_system
+
+tmp1 <- cumsum(rle(naming_system_labels)$lengths)
 
 kbl(manhattan_wide, format='html', escape=F) %>%
   add_header_above(c("", with(rle(naming_system_labels), set_names(lengths, values)))) %>%
+  column_spec(1 + c(0, tmp1[1:length(tmp1)-1]), border_right=T) %>%
   kable_styling()
 ```
 
@@ -44,7 +73,7 @@ work <- function(x, y) {
   cat(str_c('[![](', params$base_dir, '/refs/screenshots/', x$id, '.png)](', x$link_to_nextstrain, ')', '\n\n'))
 }
 
-read_csv(str_c(params$base_dir, "/refs/naming_systems.csv")) %>%
+naming_systems %>%
   rowwise %>%
   group_walk(work)
 ```
