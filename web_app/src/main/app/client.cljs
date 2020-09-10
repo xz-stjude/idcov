@@ -40,6 +40,7 @@
 ;; 
 
 (comment
+  (comp/get-initial-state root/Root)
   (inspect/app-started! SPA)
   (app/mounted? SPA)
   (app/set-root! SPA root/Root {:initialize-state? true})

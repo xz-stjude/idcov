@@ -135,12 +135,6 @@
 
   (d/datoms @conn :eavt)
 
-  (filter #(= #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d" (nth % 2)) (d/datoms @conn :eavt))
-  (filter #(= #uuid "a00b320a-b6bf-4924-bd3d-30ca47a9eb2d" (nth % 2)) (d/datoms @conn :avet))
-
-  (filter #(= #uuid "ed7feec9-6190-4448-80de-de6066a6fab2" (nth % 2)) (d/datoms @conn :eavt))
-  (filter #(= #uuid "ed7feec9-6190-4448-80de-de6066a6fab2" (nth % 2)) (d/datoms @conn :avet))
-
   (let [cfg {:store {:backend :file
                      :path    (:db-location config)}}]
     (d/delete-database cfg))

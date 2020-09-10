@@ -6,16 +6,19 @@
    [mount.core :refer [defstate]]
    [com.fulcrologic.fulcro.server.api-middleware :as fsm]
    [com.fulcrologic.fulcro.networking.file-upload :as fu]
-   [ring.middleware.defaults :refer [wrap-defaults]]
-   [ring.middleware.gzip :refer [wrap-gzip]]
-   [ring.util.response :refer [response file-response resource-response header]]
+   [ring.middleware.defaults :as rd]
+   [ring.middleware.gzip :as gzip]
    [ring.util.response :as resp]
-   [hiccup.page :refer [html5]]
+   [ring.util.time :as rt]
+   [hiccup.page :as hp]
    [taoensso.timbre :as log]
    [app.model.file :as file]
    [app.model.run :as run]
+   [app.model.run :as run]
+   [clojure.contrib.humanize :as humanize]
    [clojure.java.io :as io]
-   [app.util :as util]))
+   [app.util :as util]
+   [clojure.string :as str]))
 
 (def ^:private not-found-handler
   (fn [req]
@@ -38,7 +41,7 @@
 ;; ================================================================================
 (defn index [csrf-token]
   (log/debug "Serving index.html")
-  (html5
+  (hp/html5
     [:html {:lang "en"}
      [:head {:lang "en"}
       [:title "Application"]
@@ -50,7 +53,7 @@
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
       [:div#app]
-      [:script {:src "js/main/main.js"}]]]))
+      [:script {:src "/js/main/main.js"}]]]))
 
 ;; ================================================================================
 ;; Workspaces can be accessed via shadow's http server on http://localhost:8023/workspaces.html
@@ -59,7 +62,7 @@
 ;; ================================================================================
 (defn wslive [csrf-token]
   (log/debug "Serving wslive.html")
-  (html5
+  (hp/html5
     [:html {:lang "en"}
      [:head {:lang "en"}
       [:title "devcards"]
@@ -71,9 +74,10 @@
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
       [:div#app]
-      [:script {:src "workspaces/js/main.js"}]]]))
+      [:script {:src "/workspaces/js/main.js"}]]]))
 
 (defn wrap-html-routes [ring-handler]
+  ;; TODO: authentication
   (fn [{:keys [uri anti-forgery-token] :as req}]
     (cond
       ;; (#{"/" "/index.html"} uri)
@@ -90,6 +94,7 @@
           (resp/content-type "text/html")))))
 
 (defn wrap-download-file [ring-handler]
+  ;; TODO: authentication
   (fn [{:keys [uri anti-forgery-token] :as req}]
     (let [file-match (re-matches #"/files/(.*)/download" uri)]
       (cond
@@ -102,22 +107,59 @@
           (log/spy filename)
 
           (log/info "Serving " file "...")
-          (-> (file-response (.getPath file))
-              (header "Content-Disposition" (str "attachment; filename=\"" filename "\""))))
+          (-> (resp/file-response (.getPath file))
+              (resp/header "Content-Disposition" (str "attachment; filename=\"" filename "\""))))
 
         :else
         (ring-handler req)))))
 
 (defn wrap-run-output-files [ring-handler]
   (fn [{:keys [uri anti-forgery-token] :as req}]
-    (let [m (re-matches #"/runs/(.*)/output-files/(.*)" uri)]
+    (let [m (re-matches #"/runs/(.*)/output-files/(.*)?" uri)]
       (cond
         (some? m)
-        (let [run-id   (util/uuid (get m 1))
-              rel-path (get m 2)
-              file     (io/file (run/get-run-path run-id) "output_files" rel-path)]
-          (log/info "Serving " file "...")
-          (file-response (.getPath file)))
+        (let [run-id  (util/uuid (get m 1))
+              rel-jf  (io/file (get m 2))
+              root-jf (io/file (run/get-run-path run-id) "output_files")
+              full-jf (io/file root-jf rel-jf)]
+          (log/info "Serving " full-jf "...")
+          (or
+            (resp/file-response (.getPath rel-jf) {:root            (.getPath root-jf)
+                                                   :index-files?    false
+                                                   :allow-symlinks? true})
+            (when (.isDirectory full-jf)
+              (-> (resp/response (hp/html5
+                                   [:html {:lang "en"}
+                                    [:head {:lang "en"}
+                                     [:title (format "Index of %s" rel-jf)]
+                                     [:meta {:charset "utf-8"}]
+                                     [:meta {:name "viewport" :content "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]
+                                     [:link {:rel "shortcut icon" :href "data:image/x-icon;," :type "image/x-icon"}]
+                                     [:script (str "var fulcro_network_csrf_token = '" anti-forgery-token "';")]
+                                     [:style (str/join "\n"
+                                                       ["th { text-align: left; border-bottom: 1px solid #000 }"
+                                                        "footer { opacity: 0.5; font-size: 0.8em }"])]]
+                                    [:body
+                                     [:table
+                                      [:thead
+                                       [:tr
+                                        [:th "Name"]
+                                        [:th "Size"]]]
+                                      [:tbody
+                                       [:tr
+                                        [:td [:a {:href ".."} ".."]]
+                                        [:td ""]]
+                                       (for [jf (->> (.listFiles full-jf)
+                                                     (sort-by #(.getName %)))]
+                                         [:tr
+                                          [:td (let [filename (.getName jf)]
+                                                 [:a {:href filename} filename])]
+                                          [:td (humanize/filesize (.length jf))]])]]
+                                     [:footer
+                                      [:div (format "Run: %s" run-id)]
+                                      [:div (format "Path: ./%s" rel-jf)]]
+                                     ]]))
+                  (resp/content-type "text/html")))))
 
         :else
         (ring-handler req)))))
@@ -134,5 +176,5 @@
       (fu/wrap-mutation-file-uploads {})
       fsm/wrap-transit-params
       fsm/wrap-transit-response
-      (wrap-defaults (assoc-in defaults-config [:session] {:store session-store}))
-      wrap-gzip)))
+      (rd/wrap-defaults (assoc-in defaults-config [:session] {:store session-store}))
+      gzip/wrap-gzip)))

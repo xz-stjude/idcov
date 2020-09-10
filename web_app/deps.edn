@@ -25,6 +25,7 @@
         ring/ring-core                      {:mvn/version "1.7.1"}
         ring/ring-defaults                  {:mvn/version "0.3.2"}
         com.novemberain/langohr             {:mvn/version "5.1.0"}
+        clojure-humanize                    {:mvn/version "0.2.2"}
         }
 
  :aliases {:clj-tests {:extra-paths ["src/test"]

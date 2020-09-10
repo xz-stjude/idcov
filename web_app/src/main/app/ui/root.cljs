@@ -1,27 +1,32 @@
 (ns app.ui.root
   (:require
-   [app.model.project :as project]
-   [app.model.session :as session]
-   [app.model.run :as run]
-   [app.routing :as routing]
    [app.model.auto-refresh :as auto-refresh]
-   [clojure.string :as str]
-   [com.fulcrologic.fulcro.algorithms.form-state :as fs]
+   [app.model.project :as project]
+   [app.model.run :as run]
+   [app.model.session :as session]
+   [app.routing :as routing]
+   [app.material-ui :as mui]
+
+   [clojure.core.async                               :as async]
+   [clojure.string                                   :as str]
+   [com.fulcrologic.fulcro-css.css                   :as css]
    [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]
-   [com.fulcrologic.fulcro.application :as app]
-   [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-   [com.fulcrologic.fulcro-css.css :as css]
-   [com.fulcrologic.fulcro.dom :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre iframe]]
-   [com.fulcrologic.fulcro.dom.events :as evt]
-   [com.fulcrologic.fulcro.dom.html-entities :as ent]
-   [com.fulcrologic.fulcro.mutations :as m]
-   [com.fulcrologic.fulcro.networking.file-upload :as fu]
-   [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
-   [com.fulcrologic.fulcro.ui-state-machines :as uism]
-   [taoensso.timbre :as log]
+   [com.fulcrologic.fulcro.algorithms.form-state     :as fs]
+   [com.fulcrologic.fulcro.application               :as app]
+   [com.fulcrologic.fulcro.components                :as comp :refer [defsc]]
+   [com.fulcrologic.fulcro.data-fetch                :as df]
+   [com.fulcrologic.fulcro.dom                       :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre iframe]]
+   [com.fulcrologic.fulcro.dom.events                :as evt]
+   [com.fulcrologic.fulcro.dom.html-entities         :as ent]
+   [com.fulcrologic.fulcro.mutations                 :as m]
+   [com.fulcrologic.fulcro.networking.file-upload    :as fu]
+   [com.fulcrologic.fulcro.routing.dynamic-routing   :as dr]
+   [com.fulcrologic.fulcro.ui-state-machines         :as uism]
+   [taoensso.timbre                                  :as log]
+
    ["filesize" :as filesize]
-   [com.fulcrologic.fulcro.data-fetch :as df]
-   [clojure.core.async :as async]))
+   ))
+
 
 (declare
   SessionAccount ui-session-account
@@ -66,31 +71,39 @@
    :query         [:project/id :project/name
                    {:project/files (comp/get-query File)}]
    :initial-state {}}
-  (div :.item
-       (i :.large.icon.edit)
-       (div :.content
-            (div :.header
-                 name
-                 " - " (a {:onClick #(remove-project id)} "remove")
-                 " - " (a {:onClick #(run-project id)} "run"))
-            (div :.description (str id))
-            (div :.list
-                 (map ui-file (sort-by #(:file/name %) files))))))
+  (mui/list-item
+    (mui/list-item-avatar
+      (mui/avatar
+        (mui/folder-icon)))
+    (mui/list-item-text
+      {:primary   (str name)
+       :secondary (str id)}
+      ;; (div :.list
+      ;;      (map ui-file (sort-by #(:file/name %) files)))
+      ;; (a {:onClick #(remove-project id)} "remove")
+      ;; (a {:onClick #(run-project id)} "run")
+      )))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
 
 (defsc RunItem [this
-                {:run/keys [id name status message stdout stderr]}
+                {:ui/keys  [tab-value]
+                 :run/keys [id name status message stdout stderr]}
                 {:keys [stop-run retract-run remove-run]}]
-  {:ident         :run/id
-   :query         [:run/id :run/name :run/status
-                   :run/message :run/stdout :run/stderr]
-   :initial-state {}
-   :css           [[:.retracted {:text-decoration "line-through"
-                                 :opacity         0.3}]
-                   [:.failed {:color "red"}]
-                   [:.succeeded {:color "green"}]]}
+  {:ident     :run/id
+   :query     [:ui/tab-value
+               :run/id :run/name :run/status
+               :run/message :run/stdout :run/stderr]
+   :pre-merge (fn [{:keys [current-normalized data-tree]}]
+                (merge
+                  {:ui/tab-value "messages"}
+                  current-normalized
+                  data-tree))
+   :css       [[:.retracted {:text-decoration "line-through"
+                             :opacity         0.3}]
+               [:.failed {:color "red"}]
+               [:.succeeded {:color "green"}]]}
   (let [classes (css/get-classnames RunItem)]
     (div :.item
          (i :.large.icon.plane
@@ -111,32 +124,59 @@
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (div :.description (str id))
-              (when (= :succeeded status)
-                (let [report-url (str "/runs/" id "/output-files/index.html")]
-                  (div :.ui.segment
-                       (h4 :.ui.header (a {:href report-url :data-pushy-ignore true} "Report"))
-                       (iframe {:width 1000:height 500 :frameBorder 0 :src report-url}))))
-              (when (seq message)
-                (div :.ui.segment
-                     (h4 :.ui.header "Message")
-                     (pre (str message))))
-              (when (seq stdout)
-                (div :.ui.segment
-                     (h4 :.ui.header "Worker stdout")
-                     (pre (str stdout))))
-              (when (seq stderr)
-                (div :.ui.segment
-                     (h4 :.ui.header "Worker stderr")
-                     (pre (str stderr))))))))
+              (mui/tabs {:value    tab-value
+                         :onChange #(m/set-string! this :ui/tab-value :value %2)
+                         }
+                        (mui/tab {:label "Messages" :value "messages"})
+                        (mui/tab {:label "Report" :disabled (not= :succeeded status) :value "report"})
+                        (mui/tab {:label "Output files" :disabled (not= :succeeded status) :value "output-files"}))
+              (case tab-value
+                "messages"
+                (div
+                  (when (seq message)
+                    (div
+                      (h4 :.ui.header "Message")
+                      (pre (str message))))
+                  (when (seq stdout)
+                    (div
+                      (h4 :.ui.header "Worker stdout")
+                      (pre (str stdout))))
+                  (when (seq stderr)
+                    (div
+                      (h4 :.ui.header "Worker stderr")
+                      (pre (str stderr)))))
+
+                "report"
+                (let [url (str "/runs/" id "/output-files/index.html")]
+                  (div
+                    (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
+                    (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
+
+                "output-files"
+                (let [url (str "/runs/" id "/output-files/")]
+                  (div
+                    (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
+                    (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
+
+                nil
+                )))))
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 
-(defsc SessionAccount [this {:account/keys [projects runs]}]
+(defsc SessionAccount [this {:ui/keys      [tab-value]
+                             :account/keys [projects runs]}]
   {:ident          :account/id
-   :query          [:account/id
+   :query          [:ui/tab-value
+                    :account/id
                     :account/email
                     {:account/projects (comp/get-query ProjectItem)}
                     {:account/runs (comp/get-query RunItem)}]
+   :pre-merge      (fn [{:keys [current-normalized data-tree]}]
+                     (merge
+                       {:ui/tab-value "projects"}
+                       current-normalized
+                       data-tree))
+   :initial-state  {:account/runs [{}]}
    :initLocalState (fn [this props]
                      {:retract-run    (fn [run-id]
                                         (comp/transact! this [{(run/retract-run
@@ -162,17 +202,38 @@
                                                                   :account-id (:account/id (comp/props this))})
                                                                (comp/get-query SessionAccount)}]))})}
   (div
-    (when (seq runs)
-      (div :.ui.segment {:style {:overflow "auto"}}
-           (h3 :.ui.header "Runs")
-           (div :.ui.relaxed.divided.list {}
-                (for [run runs]
-                  (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run]))))))
-    (div :.ui.segment
-         (h3 :.ui.header "Projects")
-         (div :.ui.relaxed.divided.list {}
-              (for [project projects]
-                (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project])))))))
+    (mui/tabs {:value    tab-value
+               :onChange #(m/set-string! this :ui/tab-value :value %2)
+               }
+              (mui/tab {:label (str "Projects (" (count projects) ")") :value "projects"})
+              (mui/tab {:label (str "Runs (" (count runs) ")") :value "runs"}))
+    (case tab-value
+      "projects"
+      (dom/ul
+        (mui/list-item
+          (mui/list-item-avatar
+            (mui/avatar
+              (mui/folder-icon)))
+          (mui/list-item-text
+            {:primary   "Asdfasf"
+             :secondary "zxcvzxvcxz"}
+            ;; (div :.list
+            ;;      (map ui-file (sort-by #(:file/name %) files)))
+            ;; (a {:onClick #(remove-project id)} "remove")
+            ;; (a {:onClick #(run-project id)} "run")
+            )))
+      ;; (mui/listm
+      ;;   (for [project projects]
+      ;;     (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
+
+      "runs"
+      (when (seq runs)
+        (div :.ui.relaxed.divided.list {}
+             (for [run runs]
+               (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
+
+      nil
+      )))
 
 (def ui-session-account (comp/factory SessionAccount))
 
@@ -422,7 +483,7 @@
                            :refresh               refresh}))
    :componentDidMount (fn [this props]
                         ((comp/get-state this :turn-on-auto-refresh)))}
-  (let [current-state (log/spy (uism/get-active-state this :auto-refresh))]
+  (let [current-state (uism/get-active-state this :auto-refresh)]
     (div :.ui.segment
          (button :.ui.compact.icon.button
                  {:onClick (comp/get-state this :refresh)
@@ -437,7 +498,8 @@
                                   "Start auto-refresh")
            (button :.ui.compact.button
                    {:disabled true}
-                   "Loading ...")))))
+                   "Loading ..."))
+         )))
 
 (def ui-auto-refresh (comp/factory AutoRefresh))
 

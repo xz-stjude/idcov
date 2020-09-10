@@ -6,6 +6,8 @@ params:
 ---
 
 ```{r setup, include=FALSE}
+options(knitr.kable.NA = '')
+
 library(tidyverse)
 library(kableExtra)
 
@@ -29,7 +31,9 @@ calls_wide <- all_samples_score_df %>%
   mutate(clade=cell_spec(clade, background=color)) %>%
   summarize(call=str_c(clade, collapse='/'), .groups='drop_last') %>%
   left_join(naming_systems, by=c('id')) %>%
+  arrange(id) %>%
   pivot_wider(sample_id, names_from=naming_system, values_from=call) %>%
+  arrange(sample_id) %>%
   rename(`Sample ID`='sample_id')
 
 kbl(calls_wide, format='html', escape=F) %>%
@@ -38,13 +42,14 @@ kbl(calls_wide, format='html', escape=F) %>%
 
 ## Call Manhattan Scores
 
-The lower the score, the more likely the sample is of that particular clade. The
-one called clade is highlighted.
+The number in each cell is the Manhattan distance between the sample and the clade. The lower the Manhattan distance, the more similar between the marker profiles.
+The clade(s) with the lowest manhattan distance is highlighted. The highlighted clade(s) are regarded as the assigned clade for the sample.
 
 ```{r manhattan_wide, echo=FALSE}
 manhattan_wide <- all_samples_score_df %>%
   group_by(sample_id, id) %>%
   left_join(color_scheme, by=c(id='naming_system', 'clade')) %>%
+  arrange(id, clade) %>%
   mutate(clade=cell_spec(clade, background=color)) %>%
   mutate(manhattan=if_else(manhattan == min(manhattan), cell_spec(manhattan, background='#ffcccc'), as.character(manhattan))) %>%
   pivot_wider(sample_id, names_from=clade, values_from=manhattan) %>%
