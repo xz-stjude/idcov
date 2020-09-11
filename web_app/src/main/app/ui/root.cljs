@@ -5,7 +5,7 @@
    [app.model.run :as run]
    [app.model.session :as session]
    [app.routing :as routing]
-   [app.material-ui :as mui]
+   [app.rmwc :as r]
 
    [clojure.core.async                               :as async]
    [clojure.string                                   :as str]
@@ -15,13 +15,14 @@
    [com.fulcrologic.fulcro.application               :as app]
    [com.fulcrologic.fulcro.components                :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.data-fetch                :as df]
-   [com.fulcrologic.fulcro.dom                       :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre iframe]]
+   [com.fulcrologic.fulcro.dom                       :as dom :refer [textarea a b i img button div h1 h2 h3 h4 input label p span form code pre iframe main]]
    [com.fulcrologic.fulcro.dom.events                :as evt]
    [com.fulcrologic.fulcro.dom.html-entities         :as ent]
    [com.fulcrologic.fulcro.mutations                 :as m]
    [com.fulcrologic.fulcro.networking.file-upload    :as fu]
    [com.fulcrologic.fulcro.routing.dynamic-routing   :as dr]
    [com.fulcrologic.fulcro.ui-state-machines         :as uism]
+   [com.fulcrologic.fulcro.algorithms.react-interop  :as interop]
    [taoensso.timbre                                  :as log]
 
    ["filesize" :as filesize]
@@ -71,18 +72,14 @@
    :query         [:project/id :project/name
                    {:project/files (comp/get-query File)}]
    :initial-state {}}
-  (mui/list-item
-    (mui/list-item-avatar
-      (mui/avatar
-        (mui/folder-icon)))
-    (mui/list-item-text
-      {:primary   (str name)
-       :secondary (str id)}
-      ;; (div :.list
-      ;;      (map ui-file (sort-by #(:file/name %) files)))
-      ;; (a {:onClick #(remove-project id)} "remove")
-      ;; (a {:onClick #(run-project id)} "run")
-      )))
+  (div
+    (str name)
+    (str id)
+    ;; (div :.list
+    ;;      (map ui-file (sort-by #(:file/name %) files)))
+    ;; (a {:onClick #(remove-project id)} "remove")
+    ;; (a {:onClick #(run-project id)} "run")
+    ))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
@@ -124,12 +121,10 @@
                    ;; " - " (a {:onClick #(run-project id)} "run")
                    )
               (div :.description (str id))
-              (mui/tabs {:value    tab-value
-                         :onChange #(m/set-string! this :ui/tab-value :value %2)
-                         }
-                        (mui/tab {:label "Messages" :value "messages"})
-                        (mui/tab {:label "Report" :disabled (not= :succeeded status) :value "report"})
-                        (mui/tab {:label "Output files" :disabled (not= :succeeded status) :value "output-files"}))
+              (div :.ui.top.attached.tabular.menu
+                   (a :.item {:classes [(when (= "messages" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "messages")} "Messages")
+                   (a :.item {:classes [(when (= "report" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "report")} "Report")
+                   (a :.item {:classes [(when (= "output-files" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "output-files")} "Output Files"))
               (case tab-value
                 "messages"
                 (div
@@ -173,7 +168,7 @@
                     {:account/runs (comp/get-query RunItem)}]
    :pre-merge      (fn [{:keys [current-normalized data-tree]}]
                      (merge
-                       {:ui/tab-value "projects"}
+                       {:ui/tab-value 0}
                        current-normalized
                        data-tree))
    :initial-state  {:account/runs [{}]}
@@ -201,32 +196,26 @@
                                                                  {:project-id project-id
                                                                   :account-id (:account/id (comp/props this))})
                                                                (comp/get-query SessionAccount)}]))})}
+  (let [tabs [{:label   "Projects"
+               :content (div
+                          (for [project projects]
+                            (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))}]])
   (div
-    (mui/tabs {:value    tab-value
-               :onChange #(m/set-string! this :ui/tab-value :value %2)
-               }
-              (mui/tab {:label (str "Projects (" (count projects) ")") :value "projects"})
-              (mui/tab {:label (str "Runs (" (count runs) ")") :value "runs"}))
+    (r/tab-bar
+      {:activeTabIndex tab-value
+       :onActivate     #(m/set-integer! this :ui/tab-value :value (.. % -detail -index))}
+      (r/tab {} "Projects")
+      (r/tab {} "Runs"))
+    ;; (div :.ui.top.attached.tabular.menu
+    ;;      (a :.item {:classes [(when (= "projects" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "projects")} "Projects")
+    ;;      (a :.item {:classes [(when (= "runs" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "runs")} "Runs"))
     (case tab-value
-      "projects"
-      (dom/ul
-        (mui/list-item
-          (mui/list-item-avatar
-            (mui/avatar
-              (mui/folder-icon)))
-          (mui/list-item-text
-            {:primary   "Asdfasf"
-             :secondary "zxcvzxvcxz"}
-            ;; (div :.list
-            ;;      (map ui-file (sort-by #(:file/name %) files)))
-            ;; (a {:onClick #(remove-project id)} "remove")
-            ;; (a {:onClick #(run-project id)} "run")
-            )))
-      ;; (mui/listm
-      ;;   (for [project projects]
-      ;;     (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
+      0
+      (div
+        (for [project projects]
+          (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
 
-      "runs"
+      1
       (when (seq runs)
         (div :.ui.relaxed.divided.list {}
              (for [run runs]
@@ -240,11 +229,12 @@
 
 (defn field [{:keys [label valid? error-message] :as props}]
   (let [input-props (-> props (assoc :name label) (dissoc :label :valid? :error-message))]
-    (div :.ui.field
-         (dom/label {:htmlFor label} label)
-         (input input-props)
-         (div :.ui.error.message {:classes [(when valid? "hidden")]}
-              error-message))))
+    (r/formfield
+      {}
+      (dom/label {:htmlFor label} label)
+      (input input-props)
+      (div :.ui.error.message {:classes [(when valid? "hidden")]}
+           error-message))))
 
 (defsc SignupSuccess [this props]
   {:query         ['*]
@@ -332,40 +322,54 @@
       (div :.right.menu
            (case state
              :initial    (span :.item "Initializing ...")
-             :logged-in  (button :.item
-                                 {:onClick #(uism/trigger! this :session :event/logout)}
-                                 (span :.ui.image.label (img {:src "/avataaars.svg"}) (str account-email)) ent/nbsp "Log out")
-             :logged-out (div :.item {:style   {:position "relative"}
-                                      :onClick #(uism/trigger! this :session :event/toggle-modal)}
-                              "Login"
-                              (when open?
-                                (div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
-                                                                                    ;; Stop bubbling (would trigger the menu toggle)
-                                                                                    (evt/stop-propagation! e))
-                                                                         :classes [floating-menu]}
-                                     (h3 :.ui.header "Login")
-                                     (form :.ui.form {:classes [(when (seq error) "error")]}
-                                           (field {:label    "Email"
-                                                   :value    email
-                                                   :onChange #(m/set-string! this :ui/email :event %)})
-                                           (field {:label    "Password"
-                                                   :type     "password"
-                                                   :value    password
-                                                   :onChange #(comp/set-state! this {:password (evt/target-value %)})})
-                                           (div :.ui.error.message error)
-                                           (div :.ui.field
-                                                (button :.ui.button
-                                                        {:type    "button"
-                                                         :onClick (fn [] (uism/trigger! this :session :event/login-by-email
-                                                                                        {:email    email
-                                                                                         :password password}))
-                                                         :classes [(when loading? "loading")]} "Login"))
-                                           (div :.ui.message
-                                                (p "Don't have an account?")
-                                                (a {:onClick (fn []
-                                                               (uism/trigger! this :session :event/toggle-modal {})
-                                                               (routing/route-to! "/signup"))}
-                                                   "Please sign up!")))))))))))
+             :logged-in  (div
+                           {:style {:display       "flex"
+                                    :flexDirection "column"}}
+                           (div
+                             {:style {:textAlign "center"
+                                      :margin    8
+                                      :marginTop 16}}
+                             (img
+                               {:style {:width  64
+                                        :height 64}
+                                :src   "/avataaars.svg"}))
+                           (r/button {:onClick #(uism/trigger! this :session :event/logout)
+                                      :label   "Log out"})
+                           (r/drawer-header
+                             {}
+                             (r/drawer-title {} account-email)
+                             (r/drawer-subtitle {} "Registered user")))
+             :logged-out (div
+                           :.tool-tray
+                           {:style {:display       "flex"
+                                    :flexDirection "column"}}
+                           (r/button {:raised  true
+                                      :onClick #(uism/trigger! this :session :event/toggle-modal)
+                                      :label   "Login"})
+                           (when open?
+                             (div
+                               (form {:classes [(when (seq error) "error")]}
+                                     (field {:label    "Email"
+                                             :value    email
+                                             :onChange #(m/set-string! this :ui/email :event %)})
+                                     (field {:label    "Password"
+                                             :type     "password"
+                                             :value    password
+                                             :onChange #(comp/set-state! this {:password (evt/target-value %)})})
+                                     (div :.ui.error.message error)
+                                     (div :.ui.field
+                                          (button :.ui.button
+                                                  {:type    "button"
+                                                   :onClick (fn [] (uism/trigger! this :session :event/login-by-email
+                                                                                  {:email    email
+                                                                                   :password password}))
+                                                   :classes [(when loading? "loading")]} "Login"))
+                                     (div :.ui.message
+                                          (p "Don't have an account?")
+                                          (a {:onClick (fn []
+                                                         (uism/trigger! this :session :event/toggle-modal {})
+                                                         (routing/route-to! "/signup"))}
+                                             "Please sign up!")))))))))))
 
 (def ui-login (comp/factory Login))
 
@@ -462,7 +466,6 @@
          (div :.ui.segment
               (if valid?
                 (div {}
-                     (h2 (str "Hello, " (or (:account/email account) "The unknown one") "!"))
                      (ui-auto-refresh auto-refresh)
                      (ui-session-account account)
                      (ui-account-upload-new-project create-new-project)
@@ -483,23 +486,21 @@
                            :refresh               refresh}))
    :componentDidMount (fn [this props]
                         ((comp/get-state this :turn-on-auto-refresh)))}
-  (let [current-state (uism/get-active-state this :auto-refresh)]
-    (div :.ui.segment
-         (button :.ui.compact.icon.button
-                 {:onClick (comp/get-state this :refresh)
-                  :title   "Manual refresh"}
-                 (i :.refresh.icon))
-         (case current-state
-           :state/running (button :.ui.compact.positive.button
-                                  {:onClick (comp/get-state this :turn-off-auto-refresh)}
-                                  "Stop auto-refresh")
-           :state/stopped (button :.ui.compact.button
-                                  {:onClick (comp/get-state this :turn-on-auto-refresh)}
-                                  "Start auto-refresh")
-           (button :.ui.compact.button
-                   {:disabled true}
-                   "Loading ..."))
-         )))
+  (let [current-state         (uism/get-active-state this :auto-refresh)
+        turn-on-auto-refresh  (comp/get-state this :turn-on-auto-refresh)
+        turn-off-auto-refresh (comp/get-state this :turn-off-auto-refresh) ]
+    (div :.tool-tray
+         (r/button
+           {:outlined true
+            :onClick  (comp/get-state this :refresh)
+            :title    "Manual refresh"
+            :icon     "refresh"
+            :label    "Refresh"})
+         (r/switch {:checked  (= :state/running current-state)
+                    :onChange #(if (= :state/running current-state)
+                                 (turn-off-auto-refresh)
+                                 (turn-on-auto-refresh))
+                    :label    "Auto-refresh"}))))
 
 (def ui-auto-refresh (comp/factory AutoRefresh))
 
@@ -564,24 +565,29 @@
    }
   (let [current-tab        (some-> (dr/current-route this this) first keyword)
         {:keys [floating]} (css/get-classnames TopChrome)]
-    (div :.ui.container
-         (div :.ui.secondary.pointing.menu
-              (a :.item
-                 {:classes [(when (= :main current-tab) "active")]
-                  :href    "/main"}
-                 "Main")
-              (a :.item
-                 {:classes [(when (= :settings current-tab) "active")]
-                  :href    "/settings"}
-                 "Settings")
-              (div :.right.menu
-                   (ui-login login)))
-         (div :.ui.grid
-              (div :.ui.row
-                   (ui-top-router router)))
-         ;; (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
-         ;; (div {:classes [floating]} (str "Remotes (" (str/join ", " active-remotes) ") are processing ..."))
-         )))
+    (div
+      :.container
+      (r/drawer
+        {}
+        (ui-login login)
+        (r/drawer-content
+          {}
+          (r/list-
+            {}
+            (r/simple-list-item {:text      "Main"
+                                 :graphic   "home"
+                                 :onClick   #(routing/route-to! "/main")
+                                 :activated (= :main current-tab)})
+            (r/simple-list-item {:text      "Settings"
+                                 :graphic   "settings"
+                                 :onClick   #(routing/route-to! "/settings")
+                                 :activated (= :settings current-tab)}))))
+      (main
+        :.app-content
+        (ui-top-router router)
+        ;; (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
+        ;; (div {:classes [floating]} (str "Remotes (" (str/join ", " active-remotes) ") are processing ..."))
+        ))))
 
 (def ui-top-chrome (comp/factory TopChrome))
 

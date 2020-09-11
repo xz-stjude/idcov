@@ -1,0 +1,40 @@
+body {
+    font-size: 16px;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+.tool-tray {
+    display: flex;
+    margin: auto;
+}
+
+.tool-tray > * {
+    margin: 4px;
+}
+
+.mdc-switch {
+    margin: 12px;
+}
+
+.mdc-drawer-app-content {
+    flex-shrink: 0;
+    flex-grow: 1;
+}
+
+.mdc-top-app-bar {
+    position: static;
+}
+
+.mdc-list-item__graphic {
+    margin-right: 8px;
+}
+
+.app-content {
+    flex-grow: 1;
+    flow-shrink: 0;
+}

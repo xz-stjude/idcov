@@ -47,8 +47,12 @@
       [:title "Application"]
       [:meta {:charset "utf-8"}]
       [:meta {:name "viewport" :content "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]
-      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
-              :rel  "stylesheet"}]
+      ;; [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" :rel "stylesheet"}]
+      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" :rel "stylesheet"}]
+      [:link {:href "https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" :rel "stylesheet"}]
+      [:link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500" :rel "stylesheet"}]
+      [:link {:href "https://fonts.googleapis.com/icon?family=Material+Icons" :rel "stylesheet"}]
+      [:link {:href "/css/main.css" :rel "stylesheet"}]
       [:link {:rel "shortcut icon" :href "data:image/x-icon;," :type "image/x-icon"}]
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
@@ -68,8 +72,12 @@
       [:title "devcards"]
       [:meta {:charset "utf-8"}]
       [:meta {:name "viewport" :content "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]
-      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css"
-              :rel  "stylesheet"}]
+      ;; [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" :rel "stylesheet"}]
+      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" :rel "stylesheet"}]
+      [:link {:href "https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" :rel "stylesheet"}]
+      [:link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500" :rel "stylesheet"}]
+      [:link {:href "https://fonts.googleapis.com/icon?family=Material+Icons" :rel "stylesheet"}]
+      [:link {:href "/css/main.css" :rel "stylesheet"}]
       [:link {:rel "shortcut icon" :href "data:image/x-icon;," :type "image/x-icon"}]
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
