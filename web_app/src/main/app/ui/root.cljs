@@ -72,14 +72,16 @@
    :query         [:project/id :project/name
                    {:project/files (comp/get-query File)}]
    :initial-state {}}
-  (div
-    (str name)
-    (str id)
-    ;; (div :.list
-    ;;      (map ui-file (sort-by #(:file/name %) files)))
-    ;; (a {:onClick #(remove-project id)} "remove")
-    ;; (a {:onClick #(run-project id)} "run")
-    ))
+  (div :.item
+       (i :.large.icon.edit)
+       (div :.content
+            (div :.header
+                 name
+                 " - " (a {:onClick #(remove-project id)} "remove")
+                 " - " (a {:onClick #(run-project id)} "run"))
+            (div :.description (str id))
+            (div :.list
+                 (map ui-file (sort-by #(:file/name %) files))))))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
@@ -201,28 +203,33 @@
                           (for [project projects]
                             (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))}]])
   (div
+    {:style {:width 800}}
     (r/tab-bar
       {:activeTabIndex tab-value
        :onActivate     #(m/set-integer! this :ui/tab-value :value (.. % -detail -index))}
-      (r/tab {} "Projects")
-      (r/tab {} "Runs"))
+      (r/tab {} (str "Projects (" (count projects) ")"))
+      (r/tab {} (str "Runs (" (count runs) ")")))
     ;; (div :.ui.top.attached.tabular.menu
     ;;      (a :.item {:classes [(when (= "projects" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "projects")} "Projects")
     ;;      (a :.item {:classes [(when (= "runs" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "runs")} "Runs"))
     (case tab-value
       0
-      (div
-        (for [project projects]
-          (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
+      (if (seq projects)
+        (div
+          :.ui.relaxed.divided.list
+          (for [project projects]
+            (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
+        (div "There's no projects."))
 
       1
-      (when (seq runs)
-        (div :.ui.relaxed.divided.list {}
-             (for [run runs]
-               (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run])))))
+      (if (seq runs)
+        (div
+          :.ui.relaxed.divided.list
+          (for [run runs]
+            (ui-run-item run (select-keys (comp/get-state this) [:stop-run :retract-run :remove-run]))))
+        (div "There's no runs."))
 
-      nil
-      )))
+      nil)))
 
 (def ui-session-account (comp/factory SessionAccount))
 
@@ -373,7 +380,8 @@
 
 (def ui-login (comp/factory Login))
 
-(defsc AccountUploadNewProject [this {:ui/keys [new-project-name server-side-files-str] :as props}]
+(defsc AccountUploadNewProject [this {:ui/keys [new-project-name server-side-files-str]
+                                      :as      props}]
   {:ident         (fn [] [:component/id :upload-new-project-panel])
    :query         [{[:component/id :session] [{:session/account [:account/id]}]}
                    :ui/new-project-name
@@ -452,25 +460,20 @@
 
 (def ui-account-upload-new-project (comp/factory AccountUploadNewProject))
 
-(defsc MainSessionView [this {:ui/keys [create-new-project auto-refresh]
+(defsc MainSessionView [this {:ui/keys [auto-refresh]
                               :as      props}]
   {:ident         (fn [] [:component/id :main-session-view])
    :query         [{[:component/id :session] (comp/get-query SessionQ)}
-                   {:ui/create-new-project (comp/get-query AccountUploadNewProject)}
                    {:ui/auto-refresh (comp/get-query AutoRefresh)}]
-   :initial-state {:ui/create-new-project {}
-                   :ui/auto-refresh       {}
-                   }}
+   :initial-state {:ui/auto-refresh {}}}
   (let [{:session/keys [valid? account]} (get props [:component/id :session])]
-    (div :.ui.container
-         (div :.ui.segment
-              (if valid?
-                (div {}
-                     (ui-auto-refresh auto-refresh)
-                     (ui-session-account account)
-                     (ui-account-upload-new-project create-new-project)
-                     )
-                (div {} "Logged out"))))))
+    (div
+      (if valid?
+        (div {}
+             (ui-auto-refresh auto-refresh)
+             (ui-session-account account)
+             )
+        (div {} "Logged out")))))
 
 (def ui-main-session-view (comp/factory MainSessionView))
 
@@ -544,20 +547,25 @@
    :initial-state {:session/valid?  false
                    :session/account {}}})
 
-(defsc TopChrome [this {active-remotes ::app/active-remotes
 
+
+
+(defsc TopChrome [this {::app/keys [active-remotes]
+                        :ui/keys   [create-new-project]
                         :root/keys [router current-session login]
 
                         :as props}]
   {:ident         (fn [] [:component/id :top-chrome])
-   :query         [{:root/router (comp/get-query TopRouter)}
+   :query         [{:ui/create-new-project (comp/get-query AccountUploadNewProject)}
+                   {:root/router (comp/get-query TopRouter)}
                    {:root/current-session (comp/get-query SessionQ)}
                    {:root/login (comp/get-query Login)}
                    [::uism/asm-id ::TopRouter]
                    [::app/active-remotes '_]]
-   :initial-state {:root/router          {}
-                   :root/login           {}
-                   :root/current-session {}}
+   :initial-state {:ui/create-new-project {}
+                   :root/router           {}
+                   :root/login            {}
+                   :root/current-session  {}}
    :css           [[:.floating {:position "absolute !important"
                                 :z-index  1000
                                 :left     "0px"
@@ -568,8 +576,9 @@
     (div
       :.container
       (r/drawer
-        {}
+        {:style {:marginRight 32}}
         (ui-login login)
+        (ui-account-upload-new-project create-new-project)
         (r/drawer-content
           {}
           (r/list-
