@@ -2,8 +2,8 @@
   (:require
    [com.fulcrologic.fulcro.algorithms.react-interop :as interop]
 
-   ["@rmwc/formfield" :as rm-formfield]
-   ["@rmwc/textfield" :as rm-textfield]
+   ["@rmwc/formfield" :as rm-form-field]
+   ["@rmwc/textfield" :as rm-text-field]
    ["@rmwc/typography" :as rm-typography]
    ["@rmwc/avatar" :as rm-avatar]
    ["@rmwc/top-app-bar" :as rm-top-app-bar]
@@ -15,8 +15,8 @@
    ["@rmwc/tabs" :as rm-tabs]
    ["@rmwc/button" :as rm-button]))
 
-(def formfield (interop/react-factory rm-formfield/FormField))
-(def textfield (interop/react-factory rm-textfield/TextField))
+(def form-field (interop/react-factory rm-form-field/FormField))
+(def text-field (interop/react-factory rm-text-field/TextField))
 (def t (interop/react-factory rm-typography/Typography))
 (def avatar (interop/react-factory rm-avatar/Avatar))
 (def top-bar-fixed-adjust (interop/react-factory rm-top-app-bar/TopAppBarFixedAdjust))

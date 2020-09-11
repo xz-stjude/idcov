@@ -80,11 +80,8 @@
                  " - " (a {:onClick #(remove-project id)} "remove")
                  " - " (a {:onClick #(run-project id)} "run"))
             (div :.description (str id))
-            (div
-              :.list
-              {:style {:maxHeight 300
-                       :overflow  "auto"}}
-              (map ui-file (sort-by #(:file/name %) files))))))
+            (div :.list
+                 (map ui-file (sort-by #(:file/name %) files))))))
 
 (def ui-project-item (comp/computed-factory ProjectItem {:keyfn :project/id}))
 
@@ -130,42 +127,36 @@
                    (a :.item {:classes [(when (= "messages" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "messages")} "Messages")
                    (a :.item {:classes [(when (= "report" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "report")} "Report")
                    (a :.item {:classes [(when (= "output-files" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "output-files")} "Output Files"))
-              (div
-                :.ui.bottom.attached.segment
-                (case tab-value
-                  "messages"
+              (case tab-value
+                "messages"
+                (div
+                  (when (seq message)
+                    (div
+                      (h4 :.ui.header "Message")
+                      (pre (str message))))
+                  (when (seq stdout)
+                    (div
+                      (h4 :.ui.header "Worker stdout")
+                      (pre (str stdout))))
+                  (when (seq stderr)
+                    (div
+                      (h4 :.ui.header "Worker stderr")
+                      (pre (str stderr)))))
+
+                "report"
+                (let [url (str "/runs/" id "/output-files/index.html")]
                   (div
-                    (when (seq message)
-                      (div
-                        (h4 :.ui.header "Message")
-                        (pre (str message))))
-                    (when (seq stdout)
-                      (div
-                        (h4 :.ui.header "Worker stdout")
-                        (div
-                          {:style {:maxWidth  1000
-                                   :maxHeight 500
-                                   :overflow  "auto"}}
-                          (pre (str stdout)))))
-                    (when (seq stderr)
-                      (div
-                        (h4 :.ui.header "Worker stderr")
-                        (pre (str stderr)))))
+                    (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
+                    (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
 
-                  "report"
-                  (let [url (str "/runs/" id "/output-files/index.html")]
-                    (div
-                      (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
-                      (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
+                "output-files"
+                (let [url (str "/runs/" id "/output-files/")]
+                  (div
+                    (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
+                    (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
 
-                  "output-files"
-                  (let [url (str "/runs/" id "/output-files/")]
-                    (div
-                      (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
-                      (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
-
-                  nil
-                  ))))))
+                nil
+                )))))
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 
@@ -179,7 +170,7 @@
                     {:account/runs (comp/get-query RunItem)}]
    :pre-merge      (fn [{:keys [current-normalized data-tree]}]
                      (merge
-                       {:ui/tab-value :projects}
+                       {:ui/tab-value 0}
                        current-normalized
                        data-tree))
    :initial-state  {:account/runs [{}]}
@@ -213,16 +204,16 @@
                             (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))}]])
   (div
     {:style {:width 800}}
-    (div :.ui.secondary.pointing.menu
-         (map (fn [item] (a :.item {:key     (:value item)
-                                    :onClick #(m/set-value! this :ui/tab-value (:value item))
-                                    :classes [(when (= (:value item) tab-value) "active")]} (:label item)))
-              [{:label (str "Projects (" (count projects) ")")
-                :value :projects}
-               {:label (str "Runs (" (count runs) ")")
-                :value :runs}]))
+    (r/tab-bar
+      {:activeTabIndex tab-value
+       :onActivate     #(m/set-integer! this :ui/tab-value :value (.. % -detail -index))}
+      (r/tab {} (str "Projects (" (count projects) ")"))
+      (r/tab {} (str "Runs (" (count runs) ")")))
+    ;; (div :.ui.top.attached.tabular.menu
+    ;;      (a :.item {:classes [(when (= "projects" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "projects")} "Projects")
+    ;;      (a :.item {:classes [(when (= "runs" tab-value) "active")] :onClick #(m/set-string! this :ui/tab-value :value "runs")} "Runs"))
     (case tab-value
-      :projects
+      0
       (if (seq projects)
         (div
           :.ui.relaxed.divided.list
@@ -230,7 +221,7 @@
             (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
         (div "There's no projects."))
 
-      :runs
+      1
       (if (seq runs)
         (div
           :.ui.relaxed.divided.list
@@ -347,24 +338,20 @@
                              (img
                                {:style {:width  64
                                         :height 64}
-                                :src   "/avataaars.svg"})
-                             (p :.ui.header {:style {:margin 0}} account-email)
-                             (div
-                               {:style {:marginTop 8}}
-                               (button
-                                 :.ui.mini.button
-                                 {:onClick #(uism/trigger! this :session :event/logout)}
-                                 "Log out"))
-                             )
-                           )
+                                :src   "/avataaars.svg"}))
+                           (r/button {:onClick #(uism/trigger! this :session :event/logout)
+                                      :label   "Log out"})
+                           (r/drawer-header
+                             {}
+                             (r/drawer-title {} account-email)
+                             (r/drawer-subtitle {} "Registered user")))
              :logged-out (div
                            :.tool-tray
                            {:style {:display       "flex"
                                     :flexDirection "column"}}
-                           (button
-                             :.ui.button
-                             {:onClick #(uism/trigger! this :session :event/toggle-modal)}
-                             "Login")
+                           (r/button {:raised  true
+                                      :onClick #(uism/trigger! this :session :event/toggle-modal)
+                                      :label   "Login"})
                            (when open?
                              (div
                                (form {:classes [(when (seq error) "error")]}
@@ -510,23 +497,18 @@
   (let [current-state         (uism/get-active-state this :auto-refresh)
         turn-on-auto-refresh  (comp/get-state this :turn-on-auto-refresh)
         turn-off-auto-refresh (comp/get-state this :turn-off-auto-refresh) ]
-    (div
-      {:style {:display      "flex"
-               :marginTop    16
-               :marginBottom 16}}
-      (button
-        :.ui.button
-        {:onClick (comp/get-state this :refresh)}
-        (i :.refresh.icon)
-        "Refresh")
-      (button
-        :.ui.button
-        {:classes [(when (= :state/running current-state) "orange")]
-         :onClick #(if (= :state/running current-state)
-                     (turn-off-auto-refresh)
-                     (turn-on-auto-refresh))}
-        (i :.stopwatch.icon)
-        "Auto-refresh"))))
+    (div :.tool-tray
+         (r/button
+           {:outlined true
+            :onClick  (comp/get-state this :refresh)
+            :title    "Manual refresh"
+            :icon     "refresh"
+            :label    "Refresh"})
+         (r/switch {:checked  (= :state/running current-state)
+                    :onChange #(if (= :state/running current-state)
+                                 (turn-off-auto-refresh)
+                                 (turn-on-auto-refresh))
+                    :label    "Auto-refresh"}))))
 
 (def ui-auto-refresh (comp/factory AutoRefresh))
 
@@ -544,11 +526,11 @@
    :ident         (fn [] [:component/id :settings])
    :route-segment ["settings"]
    :initial-state {}}
-  (div
-    (h3 "Settings")
-    (div
-      (p (b "Name: ") real-name)
-      (p (b "Time Zone: ") time-zone))))
+  (div :.ui.container.segment
+       (h3 "Settings")
+       (div
+         (p (b "Name: ") real-name)
+         (p (b "Time Zone: ") time-zone))))
 
 (dr/defrouter TopRouter [this props]
   {:router-targets [Main Signup SignupSuccess Settings]})
@@ -589,61 +571,31 @@
                    :root/router           {}
                    :root/login            {}
                    :root/current-session  {}}
-   :css           [
-                   [:.active {:background "rgba(0, 0, 0, .12)"}]
-                   [:.floating {:position "absolute !important"
+   :css           [[:.floating {:position "absolute !important"
                                 :z-index  1000
                                 :left     "0px"
-                                :top      "0px"}]
-                   [:.hr-paddings {:padding-left  16
-                                   :padding-right 16}]]
+                                :top      "0px"}]]
    }
-  (let [current-tab   (some-> (dr/current-route this this) first keyword)
-        classnames    (css/get-classnames TopChrome)
-        c-active      (:active classnames)
-        c-floating    (:floating classnames)
-        c-hr-paddings (:hr-paddings classnames)]
+  (let [current-tab        (some-> (dr/current-route this this) first keyword)
+        {:keys [floating]} (css/get-classnames TopChrome)]
     (div
       :.container
-      (div
-        {:style {:display        "flex"
-                 :flex-direction "column"
-                 :border-right   "1px solid rgba(0,0,0,.12)"
-                 :width          256
-                 :marginRight    32}}
+      (r/drawer
+        {:style {:marginRight 32}}
         (ui-login login)
-        ;; (for [menu-item [{:label "Main"
-        ;;                   :url   "/main"}]])
-        (div
-          {:style {
-                   :marginTop   16
-                   :marginLeft  16
-                   :marginRight 16}}
-          (div
-            :.ui.vertical.fluid.menu
-            (map
-              #(a
-                 :.item
-                 {:key     (:value %)
-                  :href    (:url %)
-                  :classes [(when (= (:value %) current-tab) "active")
-                            c-hr-paddings]}
-                 (i :.icon {:classes [(:icon %)]})
-                 (:label %))
-              [{:label "Main"
-                :icon  "home"
-                :value :main
-                :url   "/main"}
-               {:label "Settings"
-                :icon  "settings"
-                :value :settings
-                :url   "/settings"}])))
-        (div
-          {:style {
-                   :marginTop   16
-                   :marginLeft  16
-                   :marginRight 16}}
-          (ui-account-upload-new-project create-new-project)))
+        (ui-account-upload-new-project create-new-project)
+        (r/drawer-content
+          {}
+          (r/list-
+            {}
+            (r/simple-list-item {:text      "Main"
+                                 :graphic   "home"
+                                 :onClick   #(routing/route-to! "/main")
+                                 :activated (= :main current-tab)})
+            (r/simple-list-item {:text      "Settings"
+                                 :graphic   "settings"
+                                 :onClick   #(routing/route-to! "/settings")
+                                 :activated (= :settings current-tab)}))))
       (main
         :.app-content
         (ui-top-router router)
