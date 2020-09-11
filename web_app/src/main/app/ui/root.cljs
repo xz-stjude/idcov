@@ -5,7 +5,6 @@
    [app.model.run :as run]
    [app.model.session :as session]
    [app.routing :as routing]
-   [app.rmwc :as r]
 
    [clojure.core.async                               :as async]
    [clojure.string                                   :as str]
@@ -155,62 +154,80 @@
                   "report"
                   (let [url (str "/runs/" id "/output-files/index.html")]
                     (div
-                      (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
-                      (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
+                      (a :.ui.button {:href url :data-pushy-ignore true} "View in fullscreen")
+                      (div :.ui.segment (iframe {:width 1000 :height 500 :frameBorder 0 :src url}))))
 
                   "output-files"
                   (let [url (str "/runs/" id "/output-files/")]
                     (div
-                      (h4 :.ui.header (a {:href url :data-pushy-ignore true} "View in fullscreen"))
-                      (iframe {:width 1000 :height 500 :frameBorder 0 :src url})))
+                      (a :.ui.button {:href url :data-pushy-ignore true} "View in fullscreen")
+                      (div :.ui.segment (iframe {:width 1000 :height 500 :frameBorder 0 :src url}))))
 
                   nil
                   ))))))
 
 (def ui-run-item (comp/computed-factory RunItem {:keyfn :run/id}))
 
-(defsc SessionAccount [this {:ui/keys      [tab-value]
+(defsc SessionAccount [this {:ui/keys      [tab-value
+                                            create-project-modal-active?
+                                            props-account-upload-new-project]
                              :account/keys [projects runs]}]
   {:ident          :account/id
    :query          [:ui/tab-value
+                    :ui/create-project-modal-active?
+                    {:ui/props-account-upload-new-project (comp/get-query AccountUploadNewProject)}
                     :account/id
                     :account/email
                     {:account/projects (comp/get-query ProjectItem)}
                     {:account/runs (comp/get-query RunItem)}]
    :pre-merge      (fn [{:keys [current-normalized data-tree]}]
                      (merge
-                       {:ui/tab-value :projects}
+                       {:ui/tab-value                        :projects
+                        :ui/create-project-modal-active?     false
+                        :ui/props-account-upload-new-project (comp/initial-state AccountUploadNewProject {})
+                        }
                        current-normalized
                        data-tree))
-   :initial-state  {:account/runs [{}]}
+   :initial-state  {:account/runs                        [{}]
+                    :ui/props-account-upload-new-project {}}
    :initLocalState (fn [this props]
-                     {:retract-run    (fn [run-id]
-                                        (comp/transact! this [{(run/retract-run
-                                                                 {:run-id run-id})
-                                                               (comp/get-query RunItem)}]))
-                      :stop-run       (fn [run-id]
-                                        (comp/transact! this [{(run/stop-run
-                                                                 {:run-id run-id})
-                                                               (comp/get-query RunItem)}]))
-                      :remove-run     (fn [run-id]
-                                        (comp/transact! this [{(run/remove-run-from-account
-                                                                 {:run-id     run-id
-                                                                  :account-id (:account/id (comp/props this))})
-                                                               (comp/get-query SessionAccount)}]))
-                      :remove-project (fn [project-id]
-                                        (comp/transact! this [{(project/remove-project
-                                                                 {:project-id project-id
-                                                                  :account-id (:account/id (comp/props this))})
-                                                               (comp/get-query SessionAccount)}]))
-                      :run-project    (fn [project-id]
-                                        (comp/transact! this [{(run/run-project
-                                                                 {:project-id project-id
-                                                                  :account-id (:account/id (comp/props this))})
-                                                               (comp/get-query SessionAccount)}]))})}
-  (let [tabs [{:label   "Projects"
-               :content (div
-                          (for [project projects]
-                            (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))}]])
+                     {:retract-run
+                      (fn [run-id]
+                        (comp/transact! this [{(run/retract-run
+                                                 {:run-id run-id})
+                                               (comp/get-query RunItem)}]))
+
+                      :stop-run
+                      (fn [run-id]
+                        (comp/transact! this [{(run/stop-run
+                                                 {:run-id run-id})
+                                               (comp/get-query RunItem)}]))
+
+                      :remove-run
+                      (fn [run-id]
+                        (comp/transact! this [{(run/remove-run-from-account
+                                                 {:run-id     run-id
+                                                  :account-id (:account/id (comp/props this))})
+                                               (comp/get-query SessionAccount)}]))
+
+                      :remove-project
+                      (fn [project-id]
+                        (comp/transact! this [{(project/remove-project
+                                                 {:project-id project-id
+                                                  :account-id (:account/id (comp/props this))})
+                                               (comp/get-query SessionAccount)}]))
+
+                      :run-project
+                      (fn [project-id]
+                        (comp/transact! this [{(run/run-project
+                                                 {:project-id project-id
+                                                  :account-id (:account/id (comp/props this))})
+                                               (comp/get-query SessionAccount)}]))
+
+                      :on-create-project-done
+                      (fn []
+                        ;; (m/set-value! this :ui/create-project-modal-active? false)
+                        )})}
   (div
     {:style {:width 800}}
     (div :.ui.secondary.pointing.menu
@@ -223,12 +240,35 @@
                 :value :runs}]))
     (case tab-value
       :projects
-      (if (seq projects)
-        (div
-          :.ui.relaxed.divided.list
-          (for [project projects]
-            (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
-        (div "There's no projects."))
+      (div
+        (div :.ui.segment
+             (button
+               :.ui.button
+               {:onClick #(m/toggle! this :ui/create-project-modal-active?)}
+               (i :.plus.icon)
+               ;; (if create-project-modal-active?
+               ;;   (i :.angle.up.icon)
+               ;;   (i :.angle.down.icon))
+               "New Project ...")
+             (div
+               :.ui.page.dimmer
+               {:style   {:position "fixed"
+                          :zIndex   1001}
+                :classes [(when create-project-modal-active? "active")]
+                :onClick #(m/set-value! this :ui/create-project-modal-active? false)
+                }
+               (div
+                 :.content
+                 {:onClick #(.stopPropagation %)}
+                 (div
+                   :.ui.raised.segment
+                   (ui-account-upload-new-project props-account-upload-new-project {:on-done (comp/get-state this :on-create-project-done)})))))
+        (if (seq projects)
+          (div
+            :.ui.relaxed.divided.list
+            (for [project projects]
+              (ui-project-item project (select-keys (comp/get-state this) [:remove-project :run-project]))))
+          (div "There's no projects.")))
 
       :runs
       (if (seq runs)
@@ -334,66 +374,69 @@
         {:keys [floating-menu]} (css/get-classnames Login)
         password                (or (comp/get-state this :password) "")] ; c.l. state for security
     (div
-      (div :.right.menu
-           (case state
-             :initial    (span :.item "Initializing ...")
-             :logged-in  (div
-                           {:style {:display       "flex"
-                                    :flexDirection "column"}}
-                           (div
-                             {:style {:textAlign "center"
-                                      :margin    8
-                                      :marginTop 16}}
-                             (img
-                               {:style {:width  64
-                                        :height 64}
-                                :src   "/avataaars.svg"})
-                             (p :.ui.header {:style {:margin 0}} account-email)
-                             (div
-                               {:style {:marginTop 8}}
-                               (button
-                                 :.ui.mini.button
-                                 {:onClick #(uism/trigger! this :session :event/logout)}
-                                 "Log out"))
-                             )
-                           )
-             :logged-out (div
-                           :.tool-tray
-                           {:style {:display       "flex"
-                                    :flexDirection "column"}}
-                           (button
-                             :.ui.button
-                             {:onClick #(uism/trigger! this :session :event/toggle-modal)}
-                             "Login")
-                           (when open?
-                             (div
-                               (form {:classes [(when (seq error) "error")]}
-                                     (field {:label    "Email"
-                                             :value    email
-                                             :onChange #(m/set-string! this :ui/email :event %)})
-                                     (field {:label    "Password"
-                                             :type     "password"
-                                             :value    password
-                                             :onChange #(comp/set-state! this {:password (evt/target-value %)})})
-                                     (div :.ui.error.message error)
-                                     (div :.ui.field
-                                          (button :.ui.button
-                                                  {:type    "button"
-                                                   :onClick (fn [] (uism/trigger! this :session :event/login-by-email
-                                                                                  {:email    email
-                                                                                   :password password}))
-                                                   :classes [(when loading? "loading")]} "Login"))
-                                     (div :.ui.message
-                                          (p "Don't have an account?")
-                                          (a {:onClick (fn []
-                                                         (uism/trigger! this :session :event/toggle-modal {})
-                                                         (routing/route-to! "/signup"))}
-                                             "Please sign up!")))))))))))
+      {:style {:margin 16}}
+      (case state
+        :initial    (div :.ui.segment
+                         {:style {:height 100}}
+                         (div :.ui.active.dimmer
+                              (div :.ui.indeterminate.text.loader "Validating ...")))
+        :logged-in  (div
+                      {:style {:display       "flex"
+                               :flexDirection "column"}}
+                      (div
+                        {:style {:textAlign "center"
+                                 :margin    8
+                                 :marginTop 16}}
+                        (img
+                          {:style {:width  64
+                                   :height 64}
+                           :src   "/avataaars.svg"})
+                        (p :.ui.header {:style {:margin 0}} account-email)
+                        (div
+                          {:style {:marginTop 8}}
+                          (button
+                            :.ui.mini.button
+                            {:onClick #(uism/trigger! this :session :event/logout)}
+                            "Log out"))
+                        )
+                      )
+        :logged-out (div
+                      {:style {:display       "flex"
+                               :flexDirection "column"}}
+                      (h4 :.ui.header "You are logged out."
+                          (p :.sub.header "Log in with your credentials."))
+                      (div
+                        (form :.ui.form {:classes [(when (seq error) "error")]}
+                              (field {:label    "Email"
+                                      :value    email
+                                      :onChange #(m/set-string! this :ui/email :event %)})
+                              (field {:label    "Password"
+                                      :type     "password"
+                                      :value    password
+                                      :onChange #(comp/set-state! this {:password (evt/target-value %)})})
+                              (div :.ui.error.message error)
+                              (div :.ui.fluid.buttons
+                                   (button :.ui.primary.button
+                                           {:type    "button"
+                                            :onClick (fn [] (uism/trigger! this :session :event/login-by-email
+                                                                           {:email    email
+                                                                            :password password}))
+                                            :classes [(when loading? "loading")]} "Login")
+                                   (button :.ui.button
+                                           {:onClick (fn []
+                                                       (uism/trigger! this :session :event/toggle-modal {})
+                                                       (routing/route-to! "/signup"))}
+                                           "Sign up"))))))
+      )))
 
 (def ui-login (comp/factory Login))
 
-(defsc AccountUploadNewProject [this {:ui/keys [new-project-name server-side-files-str]
-                                      :as      props}]
+(defsc AccountUploadNewProject [this
+                                {:ui/keys [new-project-name
+                                           server-side-files-str]
+                                 :as      props}
+                                {:keys [on-done]}
+                                ]
   {:ident         (fn [] [:component/id :upload-new-project-panel])
    :query         [{[:component/id :session] [{:session/account [:account/id]}]}
                    :ui/new-project-name
@@ -412,71 +455,77 @@
         overall-progress (:overall-progress marker)
         send-progress    (:send-progress marker)
         receive-progress (:receive-progress marker)]
-    (div :.ui.segment
-         (form :.ui.form
-               (div :.field
-                    (label "Project Name")
-                    (input {:value       (or new-project-name "")
-                            :placeholder "Please type a project name"
-                            :onChange    (fn [evt] (m/set-string! this :ui/new-project-name :event evt))}))
-               (div :.field
-                    (label "FastQ Files")
-                    (input {:type     "file"
-                            :multiple true
-                            :onChange (fn [evt]
-                                        (let [files (fu/evt->uploads evt)]
-                                          (comp/set-state! this {:fastq-files files})))}))
-               (div :.field
-                    (label "FastQ Files (Server-side)")
-                    (input {:type        "text"
-                            :disabled    true
-                            :value       (or server-side-files-str "")
-                            :placeholder "Type path(s) to *.fastq.gz files on the server (separated by \";\"), or leave empty."
-                            :onChange    (fn [evt] (m/set-string! this :ui/server-side-files-str :event evt))}))
-               (button {:type    "button"
-                        :onClick (fn []
-                                   (let [fastq-files (comp/get-state this :fastq-files)]
-                                     (comp/transact!
-                                       this
-                                       [{(project/create-project-with-files
-                                           (fu/attach-uploads
-                                             {:project-name new-project-name
-                                              :account-id   (get-in props [[:component/id :session] :session/account :account/id])}
-                                             fastq-files))
-                                         (comp/get-query SessionAccount)}]
-                                       {:abort-id :create-project-with-files})))}
-                       "Create Project"))
-         (case status
-           :loading
-           (comp/fragment
-             (div :.ui.active.dimmer
-                  (div :.ui.text.loader
-                       (case progress-phase
-                         ;; phase is one of #{:sending :receiving :complete :failed}
-                         :sending
-                         (str "Uploading " send-progress "% ... (")
+    (div
+      (form :.ui.form
+            (div :.field
+                 (label "Project Name")
+                 (input {:value       (or new-project-name "")
+                         :placeholder "Please type a project name"
+                         :onChange    (fn [evt] (m/set-string! this :ui/new-project-name :event evt))}))
+            (div :.field
+                 (label "FastQ Files")
+                 (input {:type     "file"
+                         :multiple true
+                         :onChange (fn [evt]
+                                     (let [files (fu/evt->uploads evt)]
+                                       (comp/set-state! this {:fastq-files files})))}))
+            (div :.field
+                 (label "FastQ Files (Server-side)")
+                 (input {:type        "text"
+                         :disabled    true
+                         :value       (or server-side-files-str "")
+                         :placeholder "Type path(s) to *.fastq.gz files on the server (separated by \";\"), or leave empty."
+                         :onChange    (fn [evt] (m/set-string! this :ui/server-side-files-str :event evt))}))
+            (div
+              :.ui.actions
+              (button
+                :.ui.button
+                {:type    "button"
+                 :onClick (fn []
+                            (let [fastq-files (comp/get-state this :fastq-files)]
+                              (comp/transact!!
+                                this
+                                [{(project/create-project-with-files
+                                    (fu/attach-uploads
+                                      {:project-name new-project-name
+                                       :account-id   (get-in props [[:component/id :session] :session/account :account/id])}
+                                      fastq-files))
+                                  (comp/get-query SessionAccount)}]
+                                {:abort-id :create-project-with-files}))
+                            (on-done))}
+                "Create Project")))
+      (case status
+        :loading
+        (comp/fragment
+          (div :.ui.active.dimmer
+               (div :.ui.text.loader
+                    (case progress-phase
+                      ;; phase is one of #{:sending :receiving :complete :failed}
+                      :sending
+                      (str "Uploading " send-progress "% ... (")
 
-                         ;; NOTE: the following values for progress-phase are possible but do not need UI
-                         ;; indication at the moment:
-                         ;;     :receiving
-                         ;;     :complete
-                         ;;     :failed
+                      ;; NOTE: the following values for progress-phase are possible but do not need UI
+                      ;; indication at the moment:
+                      ;;     :receiving
+                      ;;     :complete
+                      ;;     :failed
 
-                         ;; default
-                         "Almost ready ... (")
-                       (a {:onClick (fn []
-                                      (app/abort! this :create-project-with-files))}
-                          "cancel")
-                       ")"))
-             (div :.ui.bottom.attached.progress
-                  (div :.bar {:style {:transitDuration "300ms"
-                                      :width           (str send-progress "%")}})))
-           ;; TODO
-           ;; :error
-           ;; :complete
-           nil))))
+                      ;; default
+                      "Almost ready ... (")
+                    (a {:onClick (fn []
+                                   (app/abort! this :create-project-with-files))}
+                       "cancel")
+                    ")"))
+          (div :.ui.bottom.attached.progress
+               (div :.bar {:style {:transitDuration "300ms"
+                                   :width           (str send-progress "%")}})))
+        ;; TODO
+        ;; :error
+        ;; :complete
+        nil))
+    ))
 
-(def ui-account-upload-new-project (comp/factory AccountUploadNewProject))
+(def ui-account-upload-new-project (comp/computed-factory AccountUploadNewProject))
 
 (defsc MainSessionView [this {:ui/keys [auto-refresh]
                               :as      props}]
@@ -489,9 +538,8 @@
       (if valid?
         (div {}
              (ui-auto-refresh auto-refresh)
-             (ui-session-account account)
-             )
-        (div {} "Logged out")))))
+             (ui-session-account account))
+        (div {} "")))))
 
 (def ui-main-session-view (comp/factory MainSessionView))
 
@@ -512,7 +560,6 @@
         turn-off-auto-refresh (comp/get-state this :turn-off-auto-refresh) ]
     (div
       {:style {:display      "flex"
-               :marginTop    16
                :marginBottom 16}}
       (button
         :.ui.button
@@ -539,19 +586,19 @@
   (div
     (ui-main-session-view main-session-view)))
 
-(defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
-  {:query         [:account/time-zone :account/real-name]
-   :ident         (fn [] [:component/id :settings])
-   :route-segment ["settings"]
+(defsc About [this _]
+  {:query         []
+   :ident         (fn [] [:component/id :about])
+   :route-segment ["about"]
    :initial-state {}}
   (div
-    (h3 "Settings")
-    (div
-      (p (b "Name: ") real-name)
-      (p (b "Time Zone: ") time-zone))))
+    (img {:src "/idcov.svg"})))
 
 (dr/defrouter TopRouter [this props]
-  {:router-targets [Main Signup SignupSuccess Settings]})
+  {:router-targets [Main
+                    Signup
+                    SignupSuccess
+                    About]})
 
 (def ui-top-router (comp/factory TopRouter))
 
@@ -574,21 +621,19 @@
 
 
 (defsc TopChrome [this {::app/keys [active-remotes]
-                        :ui/keys   [create-new-project]
                         :root/keys [router current-session login]
 
                         :as props}]
   {:ident         (fn [] [:component/id :top-chrome])
-   :query         [{:ui/create-new-project (comp/get-query AccountUploadNewProject)}
+   :query         [
                    {:root/router (comp/get-query TopRouter)}
                    {:root/current-session (comp/get-query SessionQ)}
                    {:root/login (comp/get-query Login)}
                    [::uism/asm-id ::TopRouter]
                    [::app/active-remotes '_]]
-   :initial-state {:ui/create-new-project {}
-                   :root/router           {}
-                   :root/login            {}
-                   :root/current-session  {}}
+   :initial-state {:root/router          {}
+                   :root/login           {}
+                   :root/current-session {}}
    :css           [
                    [:.active {:background "rgba(0, 0, 0, .12)"}]
                    [:.floating {:position "absolute !important"
@@ -596,21 +641,29 @@
                                 :left     "0px"
                                 :top      "0px"}]
                    [:.hr-paddings {:padding-left  16
-                                   :padding-right 16}]]
-   }
+                                   :padding-right 16}]]}
   (let [current-tab   (some-> (dr/current-route this this) first keyword)
         classnames    (css/get-classnames TopChrome)
         c-active      (:active classnames)
         c-floating    (:floating classnames)
         c-hr-paddings (:hr-paddings classnames)]
     (div
-      :.container
+      {:style {:position    "relative"
+               :marginLeft  256
+               :paddingLeft 32
+               :paddingTop  16}}
+      (ui-top-router router)
       (div
-        {:style {:display        "flex"
-                 :flex-direction "column"
-                 :border-right   "1px solid rgba(0,0,0,.12)"
-                 :width          256
-                 :marginRight    32}}
+        {:style {:position      "fixed"
+                 :left          0
+                 :top           0
+                 :overflow      "auto"
+                 :display       "flex"
+                 :flexDirection "column"
+                 :borderRight   "1px solid rgba(0,0,0,.12)"
+                 :width         256
+                 :height        "100%"
+                 :marginRight   32}}
         (ui-login login)
         ;; (for [menu-item [{:label "Main"
         ;;                   :url   "/main"}]])
@@ -634,22 +687,18 @@
                 :icon  "home"
                 :value :main
                 :url   "/main"}
-               {:label "Settings"
-                :icon  "settings"
-                :value :settings
-                :url   "/settings"}])))
+               {:label "About"
+                :icon  "question circle"
+                :value :about
+                :url   "/about"}])))
         (div
           {:style {
                    :marginTop   16
                    :marginLeft  16
-                   :marginRight 16}}
-          (ui-account-upload-new-project create-new-project)))
-      (main
-        :.app-content
-        (ui-top-router router)
-        ;; (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
-        ;; (div {:classes [floating]} (str "Remotes (" (str/join ", " active-remotes) ") are processing ..."))
-        ))))
+                   :marginRight 16}}))
+      ;; (when (seq active-remotes) (div {:classes [floating]} (str "Communicating with {" (str/join ", " active-remotes) "} ...")))
+      ;; (div {:classes [floating]} (str "Remotes (" (str/join ", " active-remotes) ") are processing ..."))
+      )))
 
 (def ui-top-chrome (comp/factory TopChrome))
 
