@@ -254,35 +254,45 @@
                (case status
                  :loading
                  (div :.ui.buttons
-                      (div
-                        :.ui.disabled.button
-                        (case progress-phase
-                          ;; phase is one of #{:sending :receiving :complete :failed}
-                          :sending
-                          (str "Uploading " send-progress "% ...")
-
-
-                          ;; NOTE: the following values for progress-phase are possible but do not need UI
-                          ;; indication at the moment since they will only take a fraction of a second:
-                          ;;     :receiving
-                          ;;     :complete
-                          ;;     :failed
-
-                          ;; default
-                          "Almost ready ..."))
                       (button
                         :.ui.button
-                        {:onClick (fn [] (app/abort! this :create-project-with-files))}
+                        {:style {:padding 0}}
+                        ;; (case progress-phase
+                        ;;   ;; phase is one of #{:sending :receiving :complete :failed}
+                        ;;   :sending
+                        ;;   (str "Uploading " send-progress "% ...")
+
+
+                        ;;   ;; NOTE: the following values for progress-phase are possible but do not need UI
+                        ;;   ;; indication at the moment since they will only take a fraction of a second:
+                        ;;   ;;     :receiving
+                        ;;   ;;     :complete
+                        ;;   ;;     :failed
+
+                        ;;   ;; default
+                        ;;   "Almost ready ...")
+                        (div :.ui.progress
+                             {:style {:height "100%"}}
+                             (div :.bar
+                                  {:style (str send-progress "%")})))
+                      (button
+                        :.ui.button
                         "Cancel"))
 
                  ;; TODO
                  ;; :error
                  ;; :complete
-                 (button
-                   :.ui.button
-                   {:onClick #(m/toggle! this :ui/create-project-modal-active?)}
-                   (i :.plus.icon)
-                   "New Project ..."))
+                 (div :.ui.buttons
+                      (button
+                        :.ui.button
+                        {:style {:padding 0}}
+                        (div :.ui.progress
+                             (div :.bar {:style {:width "70%"}})))
+                      (button
+                        :.ui.button
+                        {:onClick #(m/toggle! this :ui/create-project-modal-active?)}
+                        (i :.plus.icon)
+                        "New Project ...")))
                ;; (if create-project-modal-active?
                ;;   (i :.angle.up.icon)
                ;;   (i :.angle.down.icon))
