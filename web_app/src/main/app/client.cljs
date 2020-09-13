@@ -1,28 +1,45 @@
 (ns app.client
   (:require
    [app.application :refer [SPA]]
-   [app.ui.root :as root]
-   [com.fulcrologic.fulcro.application :as app]
-   [com.fulcrologic.fulcro.networking.http-remote :as net]
-   [com.fulcrologic.fulcro.data-fetch :as df]
-   [com.fulcrologic.fulcro.ui-state-machines :as uism]
-   [com.fulcrologic.fulcro.components :as comp]
-   [com.fulcrologic.fulcro-css.css-injection :as cssi]
+   [app.model.auto-refresh :as auto-refresh]
    [app.model.session :as session]
-   [taoensso.timbre :as log]
+   [app.routing :as routing]
+   [app.ui.root :as root]
+
+   [com.fulcrologic.fulcro-css.css-injection :as cssi]
    [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
    [com.fulcrologic.fulcro.algorithms.merge :as merge]
-   [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
+   [com.fulcrologic.fulcro.algorithms.timbre-support :as ts]
+   [com.fulcrologic.fulcro.application :as app]
+   [com.fulcrologic.fulcro.components :as comp]
+   [com.fulcrologic.fulcro.data-fetch :as df]
    [com.fulcrologic.fulcro.inspect.inspect-client :as inspect]
-   [app.routing :as routing]
-   [app.model.auto-refresh :as auto-refresh]))
+   [com.fulcrologic.fulcro.networking.http-remote :as net]
+   [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
+   [com.fulcrologic.fulcro.ui-state-machines :as uism]
+   [taoensso.timbre :as log]
+   [taoensso.timbre.appenders.core :as appenders]
+   ))
 
+(defn config
+  []
+  (log/set-level!
+    (if goog.DEBUG :debug :info))
+  (log/merge-config! {:output-fn    ts/prefix-output-fn
+                      :appenders    {:console (ts/console-appender)}
+                      :ns-blacklist ["com.fulcrologic.fulcro.algorithms.indexing"
+                                     "com.fulcrologic.fulcro.algorithms.tx-processing"
+                                     "com.fulcrologic.fulcro.data-fetch"
+                                     "com.fulcrologic.fulcro.inspect.inspect-client"
+                                     "com.fulcrologic.fulcro.routing.dynamic-routing"
+                                     "com.fulcrologic.fulcro.ui-state-machines"]}))
 (defn ^:export refresh []
   (log/info "Hot code Remount")
   (cssi/upsert-css "componentcss" {:component root/Root})
   (app/mount! SPA root/Root "app"))
 
 (defn ^:export init []
+  (config)
   (log/info "Application starting.")
   (cssi/upsert-css "componentcss" {:component root/Root})
   (inspect/app-started! SPA)

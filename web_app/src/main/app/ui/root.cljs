@@ -393,7 +393,9 @@
            :ui/loading?
            :ui/email
 
-           {[:component/id :session] (comp/get-query SessionQ)}
+           {[:component/id :session] [{:session/account [:account/id
+                                                         :account/email]}]}
+           ;; {[:component/id :session] (comp/get-query SessionQ)}
            ;; NOTE: Why this instead of having :ident be (fn [] [:component/id :session])?
            ;; The reason is to avoid :ui/xxx be put into [:component/id :session]
            ;; The sacrifice is that we could never do (df/load! this :xxx Login), but that's okay because we would never do that.
@@ -533,9 +535,11 @@
 
 (defsc MainSessionView [this {:ui/keys [auto-refresh]
                               :as      props}]
-  {:ident         (fn [] [:component/id :main-session-view])
-   :query         [{[:component/id :session] (comp/get-query SessionQ)}
-                   {:ui/auto-refresh (comp/get-query AutoRefresh)}]
+  {:ident (fn [] [:component/id :main-session-view])
+   :query [{:ui/auto-refresh (comp/get-query AutoRefresh)}
+
+           {[:component/id :session] (comp/get-query SessionQ)}
+           ]
    :initial-state {:ui/auto-refresh {}}}
   (let [{:session/keys [valid? account]} (get props [:component/id :session])]
     (div

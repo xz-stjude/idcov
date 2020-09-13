@@ -4,7 +4,6 @@
    [taoensso.timbre :as log]
    [taoensso.timbre.appenders.core :as appenders]))
 
-(js/console.log "Turning logging to :debug (in app.development-preload)")
 (log/set-level! :debug)
 (log/merge-config! {:output-fn    ts/prefix-output-fn
                     :appenders    {:console (ts/console-appender)}

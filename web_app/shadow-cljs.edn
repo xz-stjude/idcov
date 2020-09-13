@@ -12,13 +12,15 @@
                  ;; :dev        {:compiler-options
                  ;;              {:external-config {:guardrails {}}}}
 
+                 :dev {:output-dir "resources/public-dev/js/main"}
+
                  :devtools {:after-load  app.client/refresh
                             :preloads    [com.fulcrologic.fulcro.inspect.preload
                                           app.development-preload]
                             :repl-pprint true}}
 
           :test {:target    :browser-test
-                 :test-dir  "resources/public/js/test"
+                 :test-dir  "resources/public-dev/js/test"
                  :ns-regexp "-test$"
 
                  ;; static required for mocking to work

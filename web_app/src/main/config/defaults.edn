@@ -1,4 +1,4 @@
-{:legal-origins #{"localhost" "dev.lvh.me"}
+{:legal-origins #{"product.domain" "localhost"}
 
  :db-location    "/data/1000/var/idcov/db"
  :file-base-path "/data/1000/var/idcov/files"
@@ -41,9 +41,10 @@
                                                :not-modified-responses true}
                                    :static    {:resources "public"}
                                    :session   true
+                                   :proxy     false ; should be true in production with SSL enabled
                                    :security  {:anti-forgery   true
                                                :hsts           true
-                                               :ssl-redirect   false
+                                               :ssl-redirect   false ; should be true in production with SSL enabled
                                                :frame-options  :sameorigin
                                                :xss-protection {:enable? true
                                                                 :mode    :block}}}}
