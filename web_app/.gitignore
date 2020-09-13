@@ -34,10 +34,10 @@ out
 pom.xml
 pom.xml*
 pom.xml.asc
-resources/private/js
-resources/public/js
-resources/public/js/cards
-resources/public/js/test
+resources/private/js-dev
+resources/public/js-dev
+resources/public/js-dev/cards
+resources/public/js-dev/test
 target
 resources/public/getting-started.html
 resources/public/.asciidoctor/
