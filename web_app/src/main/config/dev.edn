@@ -1,1 +1,2 @@
-{:taoensso.timbre/logging-config {:level :debug}}
+{:taoensso.timbre/logging-config {:level :debug}
+ :js-main-url                    "/js-dev/main/main.js"}

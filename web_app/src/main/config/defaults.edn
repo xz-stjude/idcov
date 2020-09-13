@@ -7,6 +7,8 @@
  :refs-path      "/data/1000/var/idcov/refs"
  :cache-path     "/data/1000/var/idcov/cache"
 
+ :js-main-url "/js/main/main.js"
+
  ;; :db-location    "/var/idcov/db"
  ;; :file-base-path "/var/idcov/files"
  ;; :run-base-path  "/var/idcov/runs"

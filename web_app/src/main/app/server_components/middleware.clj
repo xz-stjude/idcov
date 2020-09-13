@@ -54,7 +54,7 @@
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
       [:div#app]
-      [:script {:src (str "/" (if goog.DEBUG "js-dev" "js") "/main/main.js")}]]]))
+      [:script {:src (:js-main-url config)}]]]))
 
 (defn wrap-html-routes [ring-handler]
   ;; TODO: authentication
