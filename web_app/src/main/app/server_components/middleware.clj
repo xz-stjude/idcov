@@ -54,29 +54,7 @@
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
       [:div#app]
-      [:script {:src "/js/main/main.js"}]]]))
-
-;; ================================================================================
-;; Workspaces can be accessed via shadow's http server on http://localhost:8023/workspaces.html
-;; but that will not allow full-stack fulcro cards to talk to your server. This
-;; page embeds the CSRF token, and is at `/wslive.html` on your server (i.e. port 3000).
-;; ================================================================================
-(defn wslive [csrf-token]
-  (log/debug "Serving wslive.html")
-  (hp/html5
-    [:html {:lang "en"}
-     [:head {:lang "en"}
-      [:title "devcards"]
-      [:meta {:charset "utf-8"}]
-      [:meta {:name "viewport" :content "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]
-      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" :rel "stylesheet"}]
-      [:link {:href "https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" :rel "stylesheet"}]
-      [:link {:href "/css/main.css" :rel "stylesheet"}]
-      [:link {:rel "shortcut icon" :href "data:image/x-icon;," :type "image/x-icon"}]
-      [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
-     [:body
-      [:div#app]
-      [:script {:src "/workspaces/js/main.js"}]]]))
+      [:script {:src (str "/" (if goog.DEBUG "js-dev" "js") "/main/main.js")}]]]))
 
 (defn wrap-html-routes [ring-handler]
   ;; TODO: authentication
@@ -85,11 +63,6 @@
       ;; (#{"/" "/index.html"} uri)
       ;; (-> (resp/response (index anti-forgery-token))
       ;;     (resp/content-type "text/html"))
-
-      ;; See note above on the `wslive` function.
-      (#{"/wslive.html"} uri)
-      (-> (resp/response (wslive anti-forgery-token))
-          (resp/content-type "text/html"))
 
       :else
       (-> (resp/response (index anti-forgery-token))

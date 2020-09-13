@@ -1,2 +1,1 @@
-{:taoensso.timbre/logging-config  {:level :debug}
- :ring.middleware/defaults-config {:static {:resources "public-dev"}}}
+{:taoensso.timbre/logging-config {:level :debug}}
