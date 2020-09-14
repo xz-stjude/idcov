@@ -26,3 +26,4 @@
        (if (nil? res)
          (throw (ex-info "The requested resource does not exist." {:resource-name n}))
          res))))
+

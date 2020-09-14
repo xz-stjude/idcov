@@ -15,7 +15,7 @@
 
 (defn start
   "Start the web server"
-  [] (mount/start))
+  [] (mount/start-with-args {:debug? true}))
 
 (defn stop
   "Stop the web server"

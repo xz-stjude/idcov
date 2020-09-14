@@ -1,22 +1,19 @@
-FROM node:10
+FROM clojure:openjdk-8-tools-deps-1.10.1.561-buster
 
-# Change working directory
-WORKDIR "/app"
+# # Update packages and install dependency packages for services
+# RUN apt-get update \
+# && apt-get dist-upgrade -y \
+# && apt-get clean \
+# && echo 'Finished installing dependencies'
 
-# Update packages and install dependency packages for services
-RUN apt-get update \
-&& apt-get dist-upgrade -y \
-&& apt-get clean \
-&& echo 'Finished installing dependencies'
+# ENV PORT 3000
 
-
-ENV NODE_ENV production
-ENV PORT 3000
+RUN mkdir /var/idcov
 
 EXPOSE 3000
 
-USER cheetah
-
 COPY . /app
+# Change working directory
+WORKDIR "/app/web-app"
 
-CMD ["npm", "start"]
+CMD ["clj", "-m", "app.server-main"]

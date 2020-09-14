@@ -238,7 +238,6 @@
         send-progress    (:send-progress marker)
         receive-progress (:receive-progress marker)]
     (div
-      {:style {:width 800}}
       (div :.ui.secondary.pointing.menu
            (map (fn [item] (a :.item {:key     (:value item)
                                       :onClick #(m/set-value! this :ui/tab-value (:value item))
@@ -341,7 +340,10 @@
     (p "You can now log in!")))
 
 (defsc Signup [this {:account/keys [email password password-again] :as props}]
-  {:query             [:account/email :account/password :account/password-again fs/form-config-join]
+  {:query             [:account/email
+                       :account/password
+                       :account/password-again
+                       fs/form-config-join]
    :initial-state     (fn [_]
                         (fs/add-form-config Signup
                                             {:account/email          ""
@@ -379,10 +381,10 @@
                     :autoComplete  "off"
                     :valid?        (= password password-again)
                     :error-message "Passwords do not match."
-                    :onChange      #(m/set-string! [this] :account/password-again :event %)})
+                    :onChange      #(m/set-string! this :account/password-again :event %)})
             (button :.ui.primary.button {:type    "button"
                                          :onClick #(submit! true)}
-                    "Sign Up")))))
+                    "Sign up")))))
 
 (defsc Login [this {:ui/keys [error open? state loading? email]
                     :as      props}]
@@ -463,9 +465,10 @@
                                             :onClick (fn [] (uism/trigger! this :session :event/login-by-email
                                                                            {:email    email
                                                                             :password password}))
-                                            :classes [(when loading? "loading")]} "Login")
+                                            :classes [(when loading? "loading")]} "Log in")
                                    (button :.ui.button
-                                           {:onClick (fn []
+                                           {:type    "button"
+                                            :onClick (fn []
                                                        (uism/trigger! this :session :event/toggle-modal {})
                                                        (routing/route-to! "/signup"))}
                                            "Sign up"))))))
@@ -656,10 +659,11 @@
         c-floating    (:floating classnames)
         c-hr-paddings (:hr-paddings classnames)]
     (div
-      {:style {:position    "relative"
-               :marginLeft  256
-               :paddingLeft 32
-               :paddingTop  16}}
+      {:style {:position     "relative"
+               :marginLeft   256
+               :paddingLeft  32
+               :paddingRight 32
+               :paddingTop   16}}
       (ui-top-router router)
       (div
         {:style {:position      "fixed"

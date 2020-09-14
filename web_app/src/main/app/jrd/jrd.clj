@@ -72,7 +72,7 @@
           ;; NOTE: begin work at `pwd`
 
           ;; Link the workflow directory into the pwd
-          (let [path-to-workflow (io/file (util/resource-testy "workflow"))]
+          (let [path-to-workflow (io/file (:workflow-path config))]
             (doseq [f (.listFiles path-to-workflow)]
               (let [fname (.getName f)]
                 (if (not= "Makefile" fname)
@@ -85,12 +85,6 @@
                     (spit (io/file pwd fname) combined-content))))))
 
           (let [p (cl/proc "make" :dir pwd)]
-            ;; (.getPath (util/resource-testy "workflow/test.sh"))
-            ;; "nextflow"
-            ;; "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
-            ;; "run"
-            ;; "-ansi-log" "false"
-            ;; (.getPath (util/resource-testy "workflow/cloud.groovy"))
             (async/go (cl/stream-to p :out (io/file pwd "stdout")))
             (async/go (cl/stream-to p :err (io/file pwd "stderr")))
 
@@ -121,21 +115,8 @@
   ;; (d/transact conn [{:account}])
   )
 
-(defn ensure-refs
-  []
-  (let [{:keys [refs-path]} config]
-    (fs/mkdirs (io/file refs-path))
-    (let [refs (.listFiles (io/file (util/resource-testy "refs")))]
-      (doseq [ref refs]
-        (try
-          (let [ref-path (io/file refs-path (.getName ref))]
-            (fs/sym-link ref-path ref)
-            (log/info (format "Symlink %s -> %s" ref ref-path)))
-          (catch java.nio.file.FileAlreadyExistsException e nil))))))
-
 (defstate jrd
   :start (do
-           (ensure-refs)
            (let [exit-ch (async/chan)]
              (async/go-loop []
                (async/alt!
@@ -206,7 +187,6 @@
 
   (Thread/sleep 2000)
 
-  (def p (cl/proc (.getPath (io/resource "workflow/test_echoes.sh"))))
   (cl/stream-to p :out (io/file "/tmp/asdf"))
 
 
@@ -316,15 +296,6 @@
          (let [ch (async/timeout 1000)]
            (Thread/sleep 2000)
            (<! ch))))
-
-  (str/join " "
-            ["nextflow"
-             "-C" (.getPath (util/resource-testy "workflow/cloud.config"))
-             "run"
-             "-ansi-log" "false"
-             (.getPath (util/resource-testy "workflow/cloud.groovy"))])
-
-  
 
   (do
     (rmq/close ch-pub)

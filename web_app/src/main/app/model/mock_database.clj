@@ -3,6 +3,7 @@
             [datahike.api :as d]
             [datahike.migrate :as dm]
             [mount.core :refer [defstate]]
+            [me.raynes.fs :as fs]
             [taoensso.timbre :as log]
             [mount.core :as mount]))
 
@@ -93,20 +94,22 @@
    ])
 
 (defn new-database []
-  (let [;; note that the cfg has to be created within the new-database function
-        ;; because it depends on config which is a mount/DeferredState that
-        ;; needs to be initialized before this is run
-        cfg {:store      {:backend :file
-                          :path    (:db-location config)}
-             :initial-tx db-schema}]
+  (let [{:keys [db-location]} config]
+    (fs/mkdirs db-location)
+    (let [ ;; note that the cfg has to be created within the new-database function
+          ;; because it depends on config which is a mount/DeferredState that
+          ;; needs to be initialized before this is run
+          cfg {:store      {:backend :file
+                            :path    db-location}
+               :initial-tx db-schema}]
 
-    ;; Create the database file if it doesn't exist
-    (when (not (d/database-exists? cfg))
-      (log/info (format "Database does not exist, creating ... cfg = %s" cfg))
-      (d/create-database cfg)
-      (log/info (format "Database created.")))
+      ;; Create the database file if it doesn't exist
+      (when (not (d/database-exists? cfg))
+        (log/info (format "Database does not exist, creating ... cfg = %s" cfg))
+        (d/create-database cfg)
+        (log/info (format "Database created.")))
 
-    (d/connect cfg)))
+      (d/connect cfg))))
 
 (defstate conn
   :start (new-database)

@@ -5,7 +5,53 @@
    [taoensso.encore :as enc]
    [taoensso.timbre :as log]
    [taoensso.timbre.appenders.core :as appenders]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [clojure.java.io :as io]))
+
+(def default-config
+  {:legal-origins #{"product.domain" "localhost"}
+
+   :basepath      (or (System/getenv "BASEPATH") "./_idcov/")
+   :workflow-path (or (System/getenv "WORKFLOW_PATH") "./workflow")
+   :js-main-url   "/js/main/main.js"
+
+   ;; :db-location    "/var/idcov/db"
+   ;; :file-base-path "/var/idcov/files"
+   ;; :run-base-path  "/var/idcov/runs"
+   ;; :log-path       "/var/idcov/log"
+
+   :org.httpkit.server/config {:port     3000
+                               :max-body 2147483647}
+
+   ;; The ssl-redirect defaulted to off, but for security should probably be on in production.
+   :ring.middleware/defaults-config {:params    {:keywordize true
+                                                 :multipart  true
+                                                 :nested     true
+                                                 :urlencoded true}
+                                     :cookies   true
+                                     :responses {:absolute-redirects     true
+                                                 :content-types          true
+                                                 :default-charset        "utf-8"
+                                                 :not-modified-responses true}
+                                     :static    {:resources "public"}
+                                     :session   true
+                                     :proxy     false ; should be true in production with SSL enabled
+                                     :security  {:anti-forgery   true
+                                                 :hsts           true
+                                                 :ssl-redirect   false ; should be true in production with SSL enabled
+                                                 :frame-options  :sameorigin
+                                                 :xss-protection {:enable? true
+                                                                  :mode    :block}}}})
+
+(defn compute-paths
+  [config-map debug?]
+  (merge config-map
+         (let [basepath (:basepath config-map)]
+           {:db-location    (.getPath (io/file basepath "db"))
+            :file-base-path (.getPath (io/file basepath "files"))
+            :run-base-path  (.getPath (io/file basepath "runs"))
+            :refs-path      (.getPath (io/file basepath "refs"))
+            :cache-path     (.getPath (io/file basepath "db"))})))
 
 (defn simple-output-fn
   [data]
@@ -26,28 +72,45 @@
         (str enc/system-newline (log/stacktrace err))))))
 
 ;; taoensso.timbre needs to configured effectfully
-(defn configure-logging! [config-map]
-  (let [{:keys [taoensso.timbre/logging-config]} config-map]
-    (log/merge-config! logging-config)
+(defn configure-logging!
+  [debug?]
+  (log/merge-config! {:level        :info
+                      :ns-whitelist []
+                      ;; :ns-blacklist ["datomic.kv-cluster"
+                      ;;                "datomic.process-monitor"
+                      ;;                "datomic.reconnector2"
+                      ;;                "datomic.common"
+                      ;;                "datomic.peer"
+                      ;;                "datomic.log"
+                      ;;                "datomic.db"
+                      ;;                "datomic.slf4j"
+                      ;;                "org.projectodd.wunderboss.web.Web"
+                      ;;                "shadow.cljs.devtools.server.worker.impl"]
 
-    ;; persist the log into a file
-    (log/merge-config! {:output-fn simple-output-fn
-                        :appenders {:spit (appenders/spit-appender {:fname (:log-path config-map)})}})
+                      ;; persist the log into a file
+                      :output-fn simple-output-fn
+                      :appenders {:spit (appenders/spit-appender {:fname "/data/1000/var/idcov/log"})}}))
 
-    (log/info "Configured Timbre with" logging-config)))
+
+(defn merge-dev-config
+  [config-map debug?]
+  (if debug?
+    (do
+      (log/info "Debug config is merged.")
+      (merge config-map {:taoensso.timbre/logging-config {:level :debug}
+                         :js-main-url                    "/js-dev/main/main.js"}))
+    config-map))
 
 
 (defstate config
-  :start (let [{:keys [config-path defaults-path]
-                :or   {config-path   "config/dev.edn"
-                       defaults-path "config/defaults.edn"}} (mount/args)
+  :start (let [{:keys [debug?]} (mount/args)]
+           ;; logging is so fundamental and its configuration so stateful and non-data that we need to
+           ;; configure it before anything else
+           (configure-logging! debug?)
 
-               config-map (fsc/load-config! {:config-path   config-path
-                                             :defaults-path defaults-path})]
-
-           (log/info "Loaded config" config-map)
-           (configure-logging! config-map)
-           config-map))
+           (-> default-config
+               (compute-paths debug?)
+               (merge-dev-config debug?))))
 
 (comment
   (mount/start #'config)
