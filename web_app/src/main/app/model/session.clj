@@ -59,9 +59,10 @@
 
 (defmutation signup! [{:keys [conn]} {:keys [email password]}]
   {::pc/output [:signup/result]}
-  (d/transact conn [{:account/id (java.util.UUID/randomUUID)
+  (d/transact conn [{:account/id       (java.util.UUID/randomUUID)
                      :account/email    email
                      :account/password password}])
+  ;; Add an example project to every new user
   {:signup/result "OK"})
 
 (def resolvers [current-session login-by-email logout signup!])

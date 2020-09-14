@@ -1,35 +1,5 @@
 nextflow.preview.dsl=2
 
-// TODO: rename these processes and channels
-
-// params.path = "/research/sharedservices/gsf/runs/*/Unaligned/webbygrp_000001_COVID_Nextera_XT"
-// params.reference = "./3-reference_genome/hg38_SARScoV2.fa"
-// params.virus_ref = "./3-reference_genome/sars-cov-2.fa"
-// params.threads = 1
-
-// // Channel.fromFilePairs('./12-bams/*.bam{,.bai}', size: -1) { file -> file.name.replaceAll(/.bam|.bai$/,'') }
-// //     .into { ch_bams; ch_bams_1; ch_bams_3 }
-
-// // reference = './3-reference_genome/hg38_SARScoV2.fa'
-// reference = file('./3-reference_genome/hg38_SARScoV2.fa')
-// reference_indexes = Channel.fromPath('./3-reference_genome/hg38_SARScoV2.fa.*').collect()
-// virus_ref = file("./3-reference_genome/sars-cov-2.fa")
-// markers_bed = file("./6-markers/markers.bed")
-// // ch_fagz = Channel.fromFilePairs("./1-webbygrp_covid/*/*_R{1,2}_*.fastq.gz")
-// ch_fagz = Channel.fromFilePairs("./8-zhou_et_al/SRR11772359_{1,2}_head100000.fastq")
-// marker_ref = file("./6-markers/markers.csv")
-// strain_ref = file("./7-strains/strains.txt")
-
-
-// on St. Jude HPC (LSF)
-// params.reference = "/rgs01/project_space/cab/automapper/common/yhui/Ti-Cheng/VirusREF/Human_SARS_CoV2/hg38_SARScoV2.fa"
-// params.reference_indexes = Channel.fromPath('/rgs01/project_space/cab/automapper/common/yhui/Ti-Cheng/VirusREF/Human_SARS_CoV2/hg38_SARScoV2.fa.*').collect()
-// params.markers_bed = "./6-markers/markers.bed"
-// params.marker_ref = "./6-markers/markers.csv"
-// params.strain_ref = "./7-strains/strains.txt"
-// params.threads = 4
-// params.ch_fagz = Channel.fromFilePairs("/rgs01/project_space/cab/automapper/common/yhui/Ti-Cheng/LAB/Webby/StrainTyping/19*/*_R{1,2}.fastq.gz")
-
 reference_indexes = Channel.fromPath("${params.reference}.*").collect()
 reference_indexes.view()
 
