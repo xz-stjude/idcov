@@ -21,7 +21,7 @@
    ;; :run-base-path  "/var/idcov/runs"
    ;; :log-path       "/var/idcov/log"
 
-   :org.httpkit.server/config {:port     (Integer/parseInt (or (System/getenv "PORT") "3000"))
+   :org.httpkit.server/config {:port     (Integer/parseInt (or (System/getenv "PORT") "8080"))
                                :max-body 2147483647}
 
    ;; The ssl-redirect defaulted to off, but for security should probably be on in production.
@@ -86,10 +86,9 @@
                       ;;                "datomic.slf4j"
                       ;;                "org.projectodd.wunderboss.web.Web"
                       ;;                "shadow.cljs.devtools.server.worker.impl"]
-
                       ;; persist the log into a file
-                      :output-fn simple-output-fn
-                      :appenders {:spit (appenders/spit-appender {:fname "/data/1000/var/idcov/log"})}}))
+                      :output-fn    simple-output-fn
+                      :appenders    {:spit (appenders/spit-appender {:fname "/data/1000/var/idcov/log"})}}))
 
 
 (defn merge-dev-config
@@ -97,8 +96,15 @@
   (if debug?
     (do
       (log/info "Debug config is merged.")
-      (merge config-map {:taoensso.timbre/logging-config {:level :debug}
-                         :js-main-url                    "/js-dev/main/main.js"}))
+      (merge config-map
+             {:taoensso.timbre/logging-config
+              {:level :debug}
+
+              :org.httpkit.server/config
+              {:port 3000}
+
+              :js-main-url
+              "/js-dev/main/main.js"}))
     config-map))
 
 
