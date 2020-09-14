@@ -659,11 +659,9 @@
         c-floating    (:floating classnames)
         c-hr-paddings (:hr-paddings classnames)]
     (div
-      {:style {:position     "relative"
-               :marginLeft   256
-               :paddingLeft  32
-               :paddingRight 32
-               :paddingTop   16}}
+      {:style {:position   "relative"
+               :marginLeft 256
+               :padding    "16px 32px"}}
       (ui-top-router router)
       (div
         {:style {:position      "fixed"

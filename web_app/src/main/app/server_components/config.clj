@@ -11,8 +11,9 @@
 (def default-config
   {:legal-origins #{"product.domain" "localhost"}
 
-   :basepath      (or (System/getenv "BASEPATH") "./_idcov/")
-   :workflow-path (or (System/getenv "WORKFLOW_PATH") "./workflow")
+   :basepath      (or (System/getenv "BASEPATH") (.getAbsoluteFile (io/file "./_idcov/")))
+   :workflow-path (or (System/getenv "WORKFLOW_PATH") (.getAbsoluteFile (io/file "../workflow")))
+   :refs-path     (or (System/getenv "REFS_PATH") (.getAbsoluteFile (io/file "../refs")))
    :js-main-url   "/js/main/main.js"
 
    ;; :db-location    "/var/idcov/db"
@@ -20,7 +21,7 @@
    ;; :run-base-path  "/var/idcov/runs"
    ;; :log-path       "/var/idcov/log"
 
-   :org.httpkit.server/config {:port     3000
+   :org.httpkit.server/config {:port     (Integer/parseInt (or (System/getenv "PORT") "3000"))
                                :max-body 2147483647}
 
    ;; The ssl-redirect defaulted to off, but for security should probably be on in production.
@@ -50,8 +51,7 @@
            {:db-location    (.getPath (io/file basepath "db"))
             :file-base-path (.getPath (io/file basepath "files"))
             :run-base-path  (.getPath (io/file basepath "runs"))
-            :refs-path      (.getPath (io/file basepath "refs"))
-            :cache-path     (.getPath (io/file basepath "db"))})))
+            :cache-path     (.getPath (io/file basepath "cache"))})))
 
 (defn simple-output-fn
   [data]

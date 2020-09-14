@@ -1,4 +1,5 @@
-FROM clojure:openjdk-8-tools-deps-1.10.1.561-buster
+FROM nextflow/nextflow:20.07.1
+
 
 # # Update packages and install dependency packages for services
 # RUN apt-get update \
@@ -12,8 +13,10 @@ RUN mkdir /var/idcov
 
 EXPOSE 3000
 
-COPY . /app
+COPY idcov.jar /app/
+COPY workflow /app/
+COPY refs /app/
 # Change working directory
-WORKDIR "/app/web-app"
+WORKDIR "/app
 
-CMD ["clj", "-m", "app.server-main"]
+CMD ["java", "-jar", "idcov.jar"]
