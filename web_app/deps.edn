@@ -33,7 +33,7 @@
                        :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-529"}}}
 
            ;; See https://github.com/clojure-emacs/cider-nrepl/blob/master/deps.edn for Emacs support
-           :dev {:extra-paths ["src/test" "src/dev" "src/workspaces"]
+           :dev {:extra-paths ["src/test" "src/dev" "resources_dev"]
                  :jvm-opts    ["-XX:-OmitStackTraceInFastThrow"]
                  :extra-deps  {
                                ;; These are either for the editor or cljs
