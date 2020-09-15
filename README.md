@@ -51,6 +51,10 @@ docker run -p 8080:8080 \
 
 You should see a welcome message that says the server is now listening to the port 8080.
 
+Note: The ```pwd\`/idcov`` part specifies the folder for idcov to store its database which includes
+the account information and projects. You may want to change it to a different location such as `/var/lib/idcov`
+to suit your needs.
+
 ### 6. Visit the website
 
 Open your browser and enter `http://<IP to the server machine>:8080` and you should see the website showing up.
