@@ -104,7 +104,7 @@
               {:port 3000}
 
               :js-main-url
-              "/js-dev/main/main.js"}))
+              "/js_dev/main/main.js"}))
     config-map))
 
 

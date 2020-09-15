@@ -7,16 +7,20 @@ FROM nextflow/nextflow:20.07.1
 # && apt-get clean \
 # && echo 'Finished installing dependencies'
 
-# ENV PORT 3000
+WORKDIR "/app"
 
-RUN mkdir /var/idcov
-
-EXPOSE 3000
-
-COPY idcov.jar /app/
 COPY workflow /app/
-COPY refs /app/
-# Change working directory
-WORKDIR "/app
+ENV WORKFLOW_PATH /app/workflow
+
+RUN mkdir /idcov
+ENV BASEPATH /idcov
+
+COPY idcov_latest.jar /app/idcov.jar
+
+ENV REFS_PATH /refs
+
+ENV PORT 8080
+
+EXPOSE 8080
 
 CMD ["java", "-jar", "idcov.jar"]

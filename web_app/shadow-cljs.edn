@@ -2,18 +2,18 @@
  :nrepl  {:port       9000
           :middleware [refactor-nrepl.middleware/wrap-refactor]
           :init-ns    user}
- :builds {:main {:target     :browser
-                 :output-dir "resources/public/js/main"
-                 :asset-path "/js/main"
-
+ :builds {:main {:target  :browser
                  :modules {:main {:init-fn app.client/init
                                   :entries [app.client]}}
                  ;; guardrails checks only during dev
                  ;; :dev        {:compiler-options
                  ;;              {:external-config {:guardrails {}}}}
 
-                 :dev {:output-dir "resources_dev/public/js/main"
-                       :asset-path "/js/main"}
+                 :release {:output-dir "resources/public/js/main"
+                           :asset-path "/js/main"}
+
+                 :dev {:output-dir "resources_dev/public/js_dev/main"
+                       :asset-path "/js_dev/main"}
 
                  :devtools {:after-load  app.client/refresh
                             :preloads    [com.fulcrologic.fulcro.inspect.preload
@@ -21,7 +21,7 @@
                             :repl-pprint true}}
 
           :test {:target    :browser-test
-                 :test-dir  "resources_dev/public/js/test"
+                 :test-dir  "resources_dev/public/js_dev/test"
                  :ns-regexp "-test$"
 
                  ;; static required for mocking to work
