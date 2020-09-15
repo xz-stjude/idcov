@@ -6,7 +6,8 @@ Installation
 
 ### 1. Docker
 
-[Install Docker](https://docs.docker.com/get-docker/). Confirm by executing `docker images`. It should
+[Install Docker](https://docs.docker.com/get-docker/).
+Confirm success by executing `docker images`. It should
 show you a list of your local docker images. Note that this list might be empty,
 in which case you will only see a line of column headers. Consult the
 [docker installation guide](https://docs.docker.com/get-docker/) if any error
