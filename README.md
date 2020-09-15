@@ -7,7 +7,7 @@ Installation
 ### 1. Docker
 
 Make sure docker is installed. Confirm by executing `docker images`. It should
-show you a list your local docker images. Note that this list might be empty,
+show you a list of your local docker images. Note that this list might be empty,
 in which case you will only see a line of column headers. Consult the
 [docker installation guide](https://docs.docker.com/get-docker/) if any error
 occurs.
