@@ -51,7 +51,7 @@ docker run -p 8080:8080 \
 
 You should see a welcome message that says the server is now listening to the port 8080.
 
-Note: The ```pwd\`/idcov`` part specifies the folder for idcov to store its database which includes
+Note: The <code>`pwd\`/idcov</code> part specifies the folder for idcov to store its database which includes
 the account information and projects. You may want to change it to a different location such as `/var/lib/idcov`
 to suit your needs.
 
