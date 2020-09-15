@@ -36,7 +36,7 @@ tar xvf refs.tar.gz
 cat idcov_docker_image.tar.gz | gunzip | docker load
 ```
 
-Confirm by typing `docker images` in your shell. You should see a new image
+Confirm success by typing `docker images` in your shell. You should see a new image
 tagged "idcov" appearing in the list.
 
 ### 5. Start the server
