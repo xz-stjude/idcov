@@ -63,3 +63,44 @@ absolute (hence the `` `pwd` ``).**
 Open your browser and enter `http://<IP to the server machine>:8071` and you should see the website showing up.
 
 If you deployed the server on the same machine where your browser is, the `<IP to the server machine>` is simply `localhost`.
+
+
+Usage
+-----
+
+### 1. Register an account
+
+Click "Sign up" on the left panel to register for an account.
+
+### 2. Log in
+
+After successfully registered the account, log in with your credentials using the left panel.
+
+### 3. Create a project
+
+Click the "New project ..." button on the toolbar to create a new project.
+
+In the popped up dialog, enter a name for your project and upload the FastQ files.
+
+Note that currently idCOV supports pair-end sequences only and the FastQ files
+should be in pairs, and named as "\*R1.fastq.gz" and "\*R2.fastq.gz".
+
+After clicking the "Create Project" button, the upload process will begin and the progress will be shown on the toolbar.
+
+When all files are uploaded, you will see a new project with your specified name appearing in the list of projects.
+
+### 4. Start a run
+
+Click "run" to the right of the newly created project. A new "run" will be created in the "Runs" tab.
+
+### 5. Monitor the run progress
+
+Make sure the "Auto-refresh" button on the top of the screen is activated.
+
+You should see the new run is reporting its progress in the "Messages" tab.
+
+The run is successul when you see the icon of the run turns green.
+
+### 6. Check the report and files
+
+Go to the "Report" tab to check the report and the "Files" tab to download the output files.
