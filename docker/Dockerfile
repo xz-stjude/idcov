@@ -83,8 +83,8 @@ COPY idcov_latest.jar /app/idcov.jar
 
 ENV REFS_PATH /refs
 
-ENV PORT 8080
+ENV PORT 8071
 
-EXPOSE 8080
+EXPOSE 8071
 
 CMD ["java", "-jar", "idcov.jar"]

@@ -42,14 +42,14 @@ tagged "idcov" appearing in the list.
 ### 5. Start the server
 
 ```
-docker run -p 8080:8080 \
+docker run -p 8071:8071 \
   -v `pwd`/refs:/refs \
   -v `pwd`/idcov:/idcov \
   -it \
   idcov:latest
 ```
 
-You should see a welcome message that says the server is now listening to the port 8080.
+You should see a welcome message that says the server is now listening to the port 8071.
 
 Note: The `` `pwd\`/idcov`` part specifies the folder where idcov is going to
 store its persistent state which includes the user account information and
@@ -59,6 +59,6 @@ You may want to specify this folder at a different location such as
 
 ### 6. Visit the website
 
-Open your browser and enter `http://<IP to the server machine>:8080` and you should see the website showing up.
+Open your browser and enter `http://<IP to the server machine>:8071` and you should see the website showing up.
 
 If you deployed the server on the same machine where your browser is, the `<IP to the server machine>` is simply `localhost`.
