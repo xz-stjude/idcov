@@ -105,7 +105,7 @@
 
       ;; Create the database file if it doesn't exist
       (when (not (d/database-exists? cfg))
-        (log/info (format "Database does not exist, creating ... cfg = %s" cfg))
+        (log/info (format "Database does not exist, creating ..."))
         (d/create-database cfg)
         (log/info (format "Database created.")))
 

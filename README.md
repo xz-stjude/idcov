@@ -55,7 +55,8 @@ Note: The `` `pwd\`/idcov`` part specifies the folder where idcov is going to
 store its persistent state which includes the user account information and
 projects. Deleting this folder in the host file system effectively "factory resets" idCOV.
 You may want to specify this folder at a different location such as
-`/var/lib/idcov` to suit your needs.
+`/var/lib/idcov` to suit your needs. **Be sure that both refs and idcov paths need to be
+absolute (hence the `` `pwd` ``).**
 
 ### 6. Visit the website
 

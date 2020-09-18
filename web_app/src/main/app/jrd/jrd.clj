@@ -1,25 +1,26 @@
 (ns app.jrd.jrd
-  (:require [taoensso.timbre    :as log]
-            [mount.core         :as mount :refer [defstate]]
-            [me.raynes.conch    :as sh :refer [programs with-programs let-programs]]
-            [me.raynes.conch.low-level :as cl]
-            [langohr.queue      :as lq]
-            [langohr.core       :as rmq]
-            [langohr.consumers  :as lc]
-            [langohr.channel    :as lch]
-            [langohr.basic      :as lb]
-            [io.aviso.exception :as aviso-ex]
-            [datahike.api       :as d]
-            [clojure.string     :as str]
-            [clojure.java.shell :as shell]
-            [clojure.java.io    :as io]
-            [clojure.core.async :as async :refer [<! >! <!! >!!]]
-            [app.model.run      :as run]
-            [app.model.mock-database :refer [conn]]
-            [app.model.file     :as file]
-            [app.util :as util]
-            [me.raynes.fs :as fs]
-            [app.server-components.config :refer [config]]))
+  (:require
+   [taoensso.timbre    :as log]
+   [mount.core         :as mount :refer [defstate]]
+   [me.raynes.conch    :as sh :refer [programs with-programs let-programs]]
+   [me.raynes.conch.low-level :as cl]
+   [langohr.queue      :as lq]
+   [langohr.core       :as rmq]
+   [langohr.consumers  :as lc]
+   [langohr.channel    :as lch]
+   [langohr.basic      :as lb]
+   [io.aviso.exception :as aviso-ex]
+   [datahike.api       :as d]
+   [clojure.string     :as str]
+   [clojure.java.shell :as shell]
+   [clojure.java.io    :as io]
+   [clojure.core.async :as async :refer [<! >! <!! >!!]]
+   [app.model.run      :as run]
+   [app.model.mock-database :refer [conn]]
+   [app.model.file     :as file]
+   [app.util :as util]
+   [me.raynes.fs :as fs]
+   [app.server-components.config :refer [config]]))
 
 (defn lazy-output->str
   [s]
@@ -76,7 +77,10 @@
             (doseq [f (.listFiles path-to-workflow)]
               (let [fname (.getName f)]
                 (if (not= "Makefile" fname)
+                  ;; Every other file is simply symlinked
                   (fs/sym-link (io/file pwd fname) f)
+
+                  ;; The "Makefile" will be prepended with some environment variables
                   (let [env-exports      (str/join "\n" (map (fn [[k v]] (format "export %s=%s" k v))
                                                              {"CHEETAH_REFS_DIR"  (:refs-path config)
                                                               "CHEETAH_CACHE_DIR" (:cache-path config)}))

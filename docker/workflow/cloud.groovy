@@ -172,5 +172,5 @@ workflow {
     compare_mutations(get_coverage_of_markers.out.join(freebayes.out))
     collect_all_samples(compare_mutations.out.collect())
     generate_report(collect_all_samples.out)
-    print("All DONE! Please check the generated Report.")
+    println("All DONE! Please check the generated Report.")
 }
