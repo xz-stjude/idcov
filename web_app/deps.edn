@@ -48,13 +48,10 @@
                                nrepl/nrepl                     {:mvn/version "0.7.0"}
                                nubank/workspaces               {:mvn/version "1.0.15"}
                                org.clojure/clojurescript       {:mvn/version "1.10.758"}
-                               org.clojure/tools.namespace     {:mvn/version "0.3.1"}
+                               org.clojure/tools.namespace     {:mvn/version "1.0.0"}
                                refactor-nrepl                  {:mvn/version "2.5.0"}
-                               thheller/shadow-cljs            {:mvn/version "2.9.10"}
+                               thheller/shadow-cljs            {:mvn/version "2.11.4"}
                                }}
 
-           :ancient {:main-opts  ["-m" "deps-ancient.deps-ancient"]
-                     :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
-
-           :depstar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.104"}}}
+           :depstar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.117"}}}
            }}
