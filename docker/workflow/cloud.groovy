@@ -8,7 +8,7 @@ ch_fagz = Channel.fromFilePairs(params.path_to_fastq_gzipped)
 
 process bwa {
 
-  conda 'bioconda::bwa bioconda::samtools conda-forge::openssl=1.0'
+  conda 'bioconda::bwa bioconda::samtools conda-forge::openssl=1.0 conda-forge::ncurses=5.9'
 
     input:
     file _
@@ -28,7 +28,7 @@ process bwa {
 
 process samtools_index {
 
-  conda 'bioconda::samtools conda-forge::openssl=1.0'
+  conda 'bioconda::samtools conda-forge::openssl=1.0 conda-forge::ncurses=5.9'
 
     input:
     tuple val(sample_id), file("${sample_id}.bam")
@@ -172,4 +172,5 @@ workflow {
     compare_mutations(get_coverage_of_markers.out.join(freebayes.out))
     collect_all_samples(compare_mutations.out.collect())
     generate_report(collect_all_samples.out)
+    print("All DONE! Please check the generated Report.")
 }

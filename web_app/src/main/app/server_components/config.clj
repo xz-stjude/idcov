@@ -6,7 +6,9 @@
    [taoensso.timbre :as log]
    [taoensso.timbre.appenders.core :as appenders]
    [clojure.string :as str]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [me.raynes.fs :as fs]
+   [app.util :as util]))
 
 (def default-config
   {:legal-origins #{"product.domain" "localhost"}
@@ -48,10 +50,10 @@
   [config-map debug?]
   (merge config-map
          (let [basepath (:basepath config-map)]
-           {:db-location    (.getPath (io/file basepath "db"))
-            :file-base-path (.getPath (io/file basepath "files"))
-            :run-base-path  (.getPath (io/file basepath "runs"))
-            :cache-path     (.getPath (io/file basepath "cache"))})))
+           {:db-location    (util/ensure-dirs (.getPath (io/file basepath "db")))
+            :file-base-path (util/ensure-dirs (.getPath (io/file basepath "files")))
+            :run-base-path  (util/ensure-dirs (.getPath (io/file basepath "runs")))
+            :cache-path     (util/ensure-dirs (.getPath (io/file basepath "cache")))})))
 
 (defn simple-output-fn
   [data]

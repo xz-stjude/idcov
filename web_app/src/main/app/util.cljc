@@ -2,7 +2,8 @@
   #?(:cljs (:refer-clojure :exclude [uuid]))
   (:require [com.fulcrologic.guardrails.core :refer [>defn]]
             [clojure.spec.alpha :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [me.raynes.fs :as fs]))
 
 (defn uuid
   "Generate a UUID the same way via clj/cljs.  Without args gives random UUID. With args, builds UUID based on input (which
@@ -27,3 +28,10 @@
          (throw (ex-info "The requested resource does not exist." {:resource-name n}))
          res))))
 
+
+#?(:clj
+   (defn ensure-dirs
+     [path]
+     "Like "
+     (fs/mkdirs path)
+     path))
