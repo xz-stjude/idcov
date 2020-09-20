@@ -69,7 +69,7 @@ RUN addgroup -S anaconda && \
   find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
   /opt/conda/bin/conda clean -afy
 
-RUN apk add make tzdata
+RUN apk add --no-cache make tzdata
 
 WORKDIR "/app"
 
