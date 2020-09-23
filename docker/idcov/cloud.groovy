@@ -46,20 +46,31 @@ process samtools_index {
 
 process freebayes {
 
-  conda 'bioconda::freebayes'
+  conda 'bioconda::freebayes conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
 
     input:
     file(_)
     tuple sample_id, file(_), file(_)
 
     output:
-    tuple sample_id, file("${sample_id}.vcf")
+    tuple sample_id, file("${sample_id}_mutations.csv")
 
     publishDir params.result_folder
 
     script:
     """
-    freebayes -f ${params.reference} --ploidy 1 ${sample_id}.bam -r MN908947.3 -C 1 -v ${sample_id}.vcf
+      freebayes \\
+        --ploidy 1 \\
+        --min-mapping-quality 10 \\
+        --min-base-quality 15 \\
+        --min-coverage 10 \\
+        --min-alternate-count 5 \\
+        --region MN908947.3 \\
+        --fasta-reference ${params.reference} \\
+        --vcf ${sample_id}.vcf \\
+        ${sample_id}.bam
+      ln -sf ${baseDir}/bin/process_freebayes_results.r ./
+      Rscript process_freebayes_results.r ${sample_id}
     """
 }
 
@@ -87,19 +98,21 @@ process bedtools {
 
 process get_coverage_of_markers {
 
-  conda 'bioconda::bedtools'
+  conda 'bioconda::bedtools conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
 
     input:
     tuple sample_id, file(_), file(_)
 
     output:
-    tuple sample_id, file("./${sample_id}_coverage.bed")
+    tuple sample_id, file("${sample_id}_coverage.csv")
 
     publishDir params.result_folder
 
     script:
     """
       bedtools coverage -a ${params.markers_bed} -b ${sample_id}.bam > ./${sample_id}_coverage.bed
+      ln -sf ${baseDir}/bin/process_bedtools_results.r ./
+      Rscript process_bedtools_results.r ${sample_id}
     """
 }
 
@@ -118,8 +131,8 @@ process compare_mutations {
 
     script:
     """
-      ln -s ${baseDir}/bin/merge_mutations.r ./
-      Rscript merge_mutations.r ${sample_id}_coverage.bed ${sample_id}.vcf ${params.marker_ref} ${params.strain_ref_prefix} ${sample_id}_scores_vs_strains.csv ${sample_id}_markers.csv ${baseDir}/refs/naming_systems.csv
+      ln -sf ${baseDir}/bin/merge_mutations.r ./
+      Rscript merge_mutations.r ${sample_id} ${params.marker_ref} ${params.strain_ref_prefix} ${baseDir}/refs/naming_systems.csv
     """
 }
 
@@ -138,7 +151,7 @@ process collect_all_samples {
 
     script:
     """
-      ln -s ${baseDir}/bin/combine_samples.r ./
+      ln -sf ${baseDir}/bin/combine_samples.r ./
       Rscript combine_samples.r
     """
 }

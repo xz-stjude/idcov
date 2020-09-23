@@ -232,11 +232,13 @@
                      :file/size 888}
                     nil])
 
-  (d/q '[:find [(pull ?run [:run/id
-                            :run/status
-                            {:run/output-files [:file/id :file/name :file/size]}])]
+  (d/q '[:find [(pull ?run [:project/id
+                            :project/name
+                            {:project/files [:file/id
+                                             :file/name
+                                             :file/size]}])]
          :where
-         [?run :run/id #uuid "0669e62f-96f4-4885-908d-34e894ac8685"]
+         [?run :project/id #uuid "2dca4f6f-62d8-4717-ad5b-01a093c5935d"]
          ]
        @conn)
 

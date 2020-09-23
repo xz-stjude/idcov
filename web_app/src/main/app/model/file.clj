@@ -148,8 +148,8 @@
 
   (register-file conn "/data/1000/home/tmp/covid_samples/VIC4750_R1.fastq.gz" {:project-id #uuid "a86dc6da-321e-4afe-a8fa-be00bd30e187"})
 
-  (doseq [f (.listFiles (io/file "/data/1000/home/tmp/covid_samples/old"))]
-    (register-file conn f {:project-id #uuid "dc1077cb-fbba-4fda-bb51-87dc295fac61"}))
+  (doseq [f (.listFiles (io/file "/data/1000/home/tmp/covid_samples/selected"))]
+    (register-file conn f {:project-id #uuid "f30c317d-16c5-4f20-9dde-c8780197680c"}))
 
   )
 

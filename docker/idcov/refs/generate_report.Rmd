@@ -12,9 +12,10 @@ library(tidyverse)
 library(kableExtra)
 
 knitr::opts_chunk$set(echo = TRUE)
-all_samples <- read_csv('all_samples.csv')
 all_samples_score_df <- read_csv('all_samples_score_df.csv')
-all_samples_mutation_wide <- read_csv('all_samples_mutation_wide.csv')
+all_samples <- read_csv('all_samples.csv')
+all_samples_marker_coverages <- read_csv('all_samples_marker_coverages.csv')
+all_samples_marker_profiles <- read_csv('all_samples_marker_profiles.csv')
 
 naming_systems <- read_csv(str_c(params$base_dir, "/refs/naming_systems.csv"))
 color_scheme <- read_csv(str_c(params$base_dir, "/refs/color_scheme.csv"))
@@ -22,7 +23,9 @@ color_scheme <- read_csv(str_c(params$base_dir, "/refs/color_scheme.csv"))
 
 ## Calls
 
-```{r calls_wide, echo=FALSE}
+[Download CSV](all_samples_score_df.csv)
+
+```{r calls_wide, echo=F, message=F}
 calls_wide <- all_samples_score_df %>%
   group_by(sample_id, id) %>%
   filter(manhattan == min(manhattan)) %>%
@@ -44,6 +47,8 @@ kbl(calls_wide, format='html', escape=F) %>%
 
 The number in each cell is the Manhattan distance between the sample and the clade. The lower the Manhattan distance, the more similar between the marker profiles.
 The clade(s) with the lowest manhattan distance is highlighted. The highlighted clade(s) are regarded as the assigned clade for the sample.
+
+[Download CSV](all_samples_score_df.csv)
 
 ```{r manhattan_wide, echo=FALSE}
 manhattan_wide <- all_samples_score_df %>%
@@ -83,17 +88,39 @@ naming_systems %>%
   group_walk(work)
 ```
 
-## Coverage and Mutations
+## Marker profiles
 
-```{r all_samples_mutation_wide, echo=FALSE}
-kbl(all_samples_mutation_wide, format='html', escape=F) %>%
+[Download CSV](all_samples_marker_profiles.csv)
+
+```{r all_samples_marker_profiles, echo=FALSE}
+color_nucleotide <- function(x) {
+  cell_spec(x, background=case_when(
+    x == "A" ~ "#c17fd5",
+    x == "C" ~ "#cbb655",
+    x == "G" ~ "#96bcb8",
+    x == "T" ~ "#e1796b",
+    TRUE ~ "#ffffff"
+  ))
+}
+
+all_samples_marker_profiles_colored <-
+  all_samples_marker_profiles %>%
+  modify_at(vars(!1), color_nucleotide) %>%
+  arrange(sample_id)
+
+kbl(all_samples_marker_profiles_colored, format='html', escape=F) %>%
   kable_styling()
 ```
 
-## Details
+## Coverages
 
-```{r all_samples, echo=FALSE}
-knitr::kable(all_samples) %>%
+[Download CSV](all_samples_marker_coverages.csv)
+
+```{r all_samples_marker_coverages, echo=FALSE}
+df <-
+  all_samples_marker_coverages %>%
+  arrange(sample_id)
+
+kbl(df, format='html', escape=F) %>%
   kable_styling()
 ```
-

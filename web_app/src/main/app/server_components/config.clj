@@ -76,7 +76,7 @@
 ;; taoensso.timbre needs to configured effectfully
 (defn configure-logging!
   [debug?]
-  (log/merge-config! {:level        :info
+  (log/merge-config! {:level        (if debug? :debug :info)
                       :ns-whitelist []
                       ;; :ns-blacklist ["datomic.kv-cluster"
                       ;;                "datomic.process-monitor"
