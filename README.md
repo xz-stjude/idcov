@@ -42,7 +42,7 @@ tagged "idcov" appearing in the list.
 ### 5. Start the server
 
 ```
-docker run -p 8071:8071 \
+docker run -p 8071:8080 \
   -v `pwd`/refs:/refs \
   -v `pwd`/idcov:/idcov \
   -it \

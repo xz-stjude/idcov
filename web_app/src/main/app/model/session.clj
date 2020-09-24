@@ -5,7 +5,10 @@
             [com.fulcrologic.guardrails.core :refer [=> >defn ? |]]
             [com.wsscode.pathom.connect :as pc :refer [defmutation defresolver]]
             [datahike.api :as d]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [app.server-components.config :as config]
+            [app.model.file :as file]
+            [clojure.java.io :as io]))
 
 ;; TODO: Change the name of the resolvers
 
@@ -59,9 +62,22 @@
 
 (defmutation signup! [{:keys [conn]} {:keys [email password]}]
   {::pc/output [:signup/result]}
-  (d/transact conn [{:account/id       (java.util.UUID/randomUUID)
-                     :account/email    email
-                     :account/password password}])
+  (let [{:keys [example-project-path]} config/config]
+    (if (nil? example-project-path)
+
+      (d/transact conn [{:account/id       (java.util.UUID/randomUUID)
+                         :account/email    email
+                         :account/password password}])
+
+      (let [files              (.listFiles (io/file example-project-path))
+            files-tx           (mapv file/link-file files)
+            example-project-tx {:project/id    (java.util.UUID/randomUUID)
+                                :project/name  "Example project"
+                                :project/files files-tx}]
+        (d/transact conn [{:account/id       (java.util.UUID/randomUUID)
+                           :account/email    email
+                           :account/password password
+                           :account/projects [example-project-tx]}]))))
   ;; Add an example project to every new user
   {:signup/result "OK"})
 

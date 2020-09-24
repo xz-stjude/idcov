@@ -61,25 +61,11 @@
   [filename]
   (str/replace filename #"[^a-zA-Z0-9_.\-]" "_"))
 
-
-(defn register-file
-  "Copies the file to the file warehouse, and then register it on the database.
-
-  options:
-
-      :filename        - If a string, use it as the name of the file registered on the server.
-                         Otherwise, the original filename of the supplied path-to-file is used. (default: nil)
-
-      :link-method     - One of :copy, :sym-link, and :move. (default: :sym-link)
-
-      :project-id      - If an uuid, the registered file will be added to the project with supplied id.
-                         If nil, nothing will be done. (default: nil)
-  "
-  ([conn path-to-file] (register-file conn path-to-file {}))
-  ([conn path-to-file {:keys [filename link-method project-id]
-                       :or   {filename    nil
-                              link-method :sym-link
-                              project-id  nil}}]
+(defn link-file
+  ([path-to-file] (link-file path-to-file {}))
+  ([path-to-file {:keys [filename link-method]
+                  :or   {filename    nil
+                         link-method :sym-link}}]
    (let [file      (io/file path-to-file)
          filesize  (.length file) ; NOTE: .length follows sym-link
          filename_ (sanitize-filename (if (string? filename)
@@ -87,14 +73,8 @@
                                         (.getName file)))
          file-id   (generate-file-id file)
          dest-file (get-file-path file-id)]
-     (log/spy filename_)
-     (log/spy file-id)
-     (log/spy dest-file)
-     (log/debug #:file{:id   file-id
-                       :name filename_
-                       :size (.length file)})
+     (log/info (format "Trying to link %s (%s bytes) -> %s ..." filename_ (.length file) file-id))
      (try
-
        (case link-method
          :sym-link (do
                      (fs/mkdirs (.getParentFile dest-file))
@@ -104,19 +84,11 @@
                      (fs/copy+ file dest-file)
                      (fs/delete file)))
 
-       (d/transact conn [{:db/id     "new_file"
-                          :file/id   file-id
-                          :file/name filename_
-                          ;; File size is stored directly into the database because
-                          ;; we would like to minimize the access to the file system,
-                          ;; since it is something many frontend views would ask for.
-                          :file/size filesize}
-                         (when (= java.util.UUID (class project-id))
-                           {:project/id    project-id
-                            :project/files ["new_file"]})])
-
        {:file/id   file-id
         :file/name filename_
+        ;; File size is stored directly into the database because
+        ;; we would like to minimize the access to the file system,
+        ;; since it is something many frontend views would ask for.
         :file/size filesize}
 
        (catch Exception e
@@ -129,27 +101,20 @@
                           :dest-file    dest-file}
                          e)))))))
 
-(defn register-uploaded-file
-  [conn project-id js-file]
-  ;; js-file =
-  ;;     {:filename "sample01_R1.fastq"
-  ;;      :content-type "xxx/xxx"
-  ;;      :tempfile #object[java.io.File 0x5a7d2ed6 "/tmp/ring-multipart-443736812093768988.tmp"]
-  ;;      :size 521212}
-  (register-file conn (:tempfile js-file)
-                 {:filename    (:filename js-file)
-                  :project-id  project-id
-                  :link-method :move}))
-
 (def resolvers [file-r])
 
 (comment
   (refresh-file-cache)
 
-  (register-file conn "/data/1000/home/tmp/covid_samples/VIC4750_R1.fastq.gz" {:project-id #uuid "a86dc6da-321e-4afe-a8fa-be00bd30e187"})
-
-  (doseq [f (.listFiles (io/file "/data/1000/home/tmp/covid_samples/selected"))]
-    (register-file conn f {:project-id #uuid "f30c317d-16c5-4f20-9dde-c8780197680c"}))
+  (let [project-id #uuid "f30c317d-16c5-4f20-9dde-c8780197680c"
+        files      (.listFiles (io/file "/data/1000/home/tmp/covid_samples/selected"))
+        file-txs   (vec
+                     (for [{:keys [tempfile filename]} files]
+                       (file/link-file tempfile
+                                       {:filename    filename
+                                        :link-method :move})))]
+    (d/transact conn [{:project/id    project-id
+                       :project/files file-txs}]))
 
   )
 

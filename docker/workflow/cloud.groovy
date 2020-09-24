@@ -131,6 +131,7 @@ process compare_mutations {
 
     script:
     """
+
       ln -sf ${baseDir}/bin/merge_mutations.r ./
       Rscript merge_mutations.r ${sample_id} ${params.marker_ref} ${params.strain_ref_prefix} ${baseDir}/refs/naming_systems.csv
     """

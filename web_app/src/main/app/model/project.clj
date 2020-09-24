@@ -26,25 +26,26 @@
                    ::fu/keys [files]
                    :as       inputs}]
   {}
-  (log/spy inputs)
+  ;; {:project-name "vcxbcvbc"
+  ;;  :account-id   #uuid "12e59b5c-93f3-48ce-9ff0-5a972ffaf41a"
+  ;;  ::fu/files    [{:filename     "foo.txt"
+  ;;                  :content-type "text/plain"
+  ;;                  :tempfile     #object[java.io.File 0x6a9d213f "/tmp/ring-multipart-17154054071924291961.tmp"]
+  ;;                  :size         18}]}
+
   ;; TODO: need to reject if the account id doesn't exist
-  (let [project-id (util/uuid)]
-    (d/transact conn [{:account/id       account-id
-                       :account/projects [{:project/id   project-id
-                                           :project/name project-name}]}])
+  (let [project-id (util/uuid)
+        file-txs   (vec
+                     (for [file files]
+                       (file/link-file (:tempfile file)
+                                       {:filename    (:filename file)
+                                        :link-method :move})))]
+    (d/transact conn (log/spy [{:account/id       account-id
+                                :account/projects [{:project/id    project-id
+                                                    :project/name  project-name
+                                                    :project/files file-txs}]}])))
 
-    ;; {:project-name                                        "vcxbcvbc"
-    ;;  :account-id                                          #uuid "12e59b5c-93f3-48ce-9ff0-5a972ffaf41a"
-    ;;  :com.fulcrologic.fulcro.networking.file-upload/files [{:filename     "foo.txt"
-    ;;                                                         :content-type "text/plain"
-    ;;                                                         :tempfile     #object[java.io.File 0x6a9d213f "/tmp/ring-multipart-17154054071924291961.tmp"]
-    ;;                                                         :size         18}]}
-
-    (doseq [file files]
-      (file/register-uploaded-file conn project-id file))
-
-    {:account/id account-id})
-  )
+  {:account/id account-id})
 
 (defmutation remove-project [{{{{initiator-account-id :account/id} :session/account} :session} :ring/request
 

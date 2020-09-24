@@ -13,10 +13,11 @@
 (def default-config
   {:legal-origins #{"product.domain" "localhost"}
 
-   :basepath      (or (System/getenv "BASEPATH") (.getAbsoluteFile (io/file "./_idcov/")))
-   :workflow-path (or (System/getenv "WORKFLOW_PATH") (.getAbsoluteFile (io/file "../workflow")))
-   :refs-path     (or (System/getenv "REFS_PATH") (.getAbsoluteFile (io/file "../refs")))
-   :js-main-url   "/js/main/main.js"
+   :basepath             (or (System/getenv "BASEPATH") (.getAbsoluteFile (io/file "./state")))
+   :workflow-path        (or (System/getenv "WORKFLOW_PATH") (.getAbsoluteFile (io/file "./workflow")))
+   :refs-path            (or (System/getenv "REFS_PATH") (.getAbsoluteFile (io/file "./refs")))
+   :example-project-path (or (System/getenv "EXAMPLE_PROJECT_PATH") nil)
+   :js-main-url          "/js/main/main.js"
 
    ;; :db-location    "/var/idcov/db"
    ;; :file-base-path "/var/idcov/files"
