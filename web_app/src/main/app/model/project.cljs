@@ -12,22 +12,41 @@
   ;; (remote [env] (m/returning env root/AccountProjectList))
   (action
     [{:keys [app]}]
-    (df/set-load-marker! app ::create-project-with-files :loading))
+    (df/set-load-marker! app :create-project-with-files :loading))
   (progress-action
     [{:keys [state] :as env}]
-    (log/spy env)
     (swap! state #(-> %
                       ;; phase is one of #{:sending :receiving :complete :failed}
-                      (assoc-in [df/marker-table ::create-project-with-files :progress-phase] (get-in env [:progress :raw-progress :progress-phase]))
-                      (assoc-in [df/marker-table ::create-project-with-files :send-progress] (hr/send-progress env))
-                      (assoc-in [df/marker-table ::create-project-with-files :receive-progress] (hr/receive-progress env))
-                      (assoc-in [df/marker-table ::create-project-with-files :overall-progress] (hr/overall-progress env)))))
+                      (assoc-in [df/marker-table :create-project-with-files :progress-phase] (get-in env [:progress :raw-progress :progress-phase]))
+                      (assoc-in [df/marker-table :create-project-with-files :send-progress] (hr/send-progress env))
+                      (assoc-in [df/marker-table :create-project-with-files :receive-progress] (hr/receive-progress env))
+                      (assoc-in [df/marker-table :create-project-with-files :overall-progress] (hr/overall-progress env)))))
   (ok-action
     [{:keys [app]}]
-    (df/set-load-marker! app ::create-project-with-files :complete))
+    (df/set-load-marker! app :create-project-with-files :complete))
   (error-action
     [{:keys [app]}]
-    (df/set-load-marker! app ::create-project-with-files :error))
+    (df/set-load-marker! app :create-project-with-files :error))
+  (remote [_] true))
+
+(defmutation add-example-project [{:keys [account-id]}]
+  (action
+    [{:keys [app]}]
+    (df/set-load-marker! app :add-example-project :loading))
+  (progress-action
+    [{:keys [state] :as env}]
+    (swap! state #(-> %
+                      ;; phase is one of #{:sending :receiving :complete :failed}
+                      (assoc-in [df/marker-table :add-example-project :progress-phase] (get-in env [:progress :raw-progress :progress-phase]))
+                      (assoc-in [df/marker-table :add-example-project :send-progress] (hr/send-progress env))
+                      (assoc-in [df/marker-table :add-example-project :receive-progress] (hr/receive-progress env))
+                      (assoc-in [df/marker-table :add-example-project :overall-progress] (hr/overall-progress env)))))
+  (ok-action
+    [{:keys [app]}]
+    (df/set-load-marker! app :add-example-project :complete))
+  (error-action
+    [{:keys [app]}]
+    (df/set-load-marker! app :add-example-project :error))
   (remote [_] true))
 
 (defmutation remove-project [{:keys [project-id account-id]}]

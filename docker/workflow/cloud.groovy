@@ -7,9 +7,6 @@ ch_fagz = Channel.fromFilePairs(params.path_to_fastq_gzipped)
 
 
 process bwa {
-
-  conda 'bioconda::bwa bioconda::samtools conda-forge::openssl=1.0 conda-forge::ncurses=5.9'
-
     input:
     file _
     tuple val(sample_id), file(reads)
@@ -27,9 +24,6 @@ process bwa {
 }
 
 process samtools_index {
-
-  conda 'bioconda::samtools conda-forge::openssl=1.0 conda-forge::ncurses=5.9'
-
     input:
     tuple val(sample_id), file("${sample_id}.bam")
 
@@ -45,9 +39,6 @@ process samtools_index {
 }
 
 process freebayes {
-
-  conda 'bioconda::freebayes conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
-
     input:
     file(_)
     tuple sample_id, file(_), file(_)
@@ -76,9 +67,6 @@ process freebayes {
 
 
 process bedtools {
-
-  conda 'bioconda::bedtools'
-
     input:
     tuple sample_id, file(_), file(_)
 
@@ -97,9 +85,6 @@ process bedtools {
 
 
 process get_coverage_of_markers {
-
-  conda 'bioconda::bedtools conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
-
     input:
     tuple sample_id, file(_), file(_)
 
@@ -118,9 +103,6 @@ process get_coverage_of_markers {
 
 
 process compare_mutations {
-
-  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0'
-
     input:
     tuple sample_id, file(_), file(_)
 
@@ -139,9 +121,6 @@ process compare_mutations {
 
 
 process collect_all_samples {
-
-  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-tidyverse=1.3.0 conda-forge::r-rmarkdown'
-
     input:
     file _
 
@@ -159,9 +138,6 @@ process collect_all_samples {
 
 
 process generate_report {
-
-  conda 'conda-forge::icu conda-forge::r-base conda-forge::r-stringi conda-forge::r-rmarkdown conda-forge::r-tidyverse=1.3.0 conda-forge::pandoc conda-forge::r-kableextra'
-
     input:
     file _
 
@@ -188,3 +164,4 @@ workflow {
     generate_report(collect_all_samples.out)
     println("All DONE! Please check the generated Report.")
 }
+

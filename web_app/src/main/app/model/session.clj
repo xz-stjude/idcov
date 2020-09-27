@@ -62,7 +62,7 @@
 
 (defmutation signup! [{:keys [conn]} {:keys [email password]}]
   {::pc/output [:signup/result]}
-  (let [{:keys [example-project-path]} config/config]
+  (let [example-project-path (:example-project-path config/config)]
     (if (nil? example-project-path)
 
       (d/transact conn [{:account/id       (java.util.UUID/randomUUID)

@@ -117,8 +117,16 @@ kbl(all_samples_marker_profiles_colored, format='html', escape=F) %>%
 [Download CSV](all_samples_marker_coverages.csv)
 
 ```{r all_samples_marker_coverages, echo=FALSE}
+color_cell <- function(x) {
+  cell_spec(x, background=case_when(
+    x < 10 ~ "#ffaaaa",
+    TRUE ~ "#ffffff"
+  ))
+}
+
 df <-
   all_samples_marker_coverages %>%
+  modify_at(vars(!1), color_cell) %>%
   arrange(sample_id)
 
 kbl(df, format='html', escape=F) %>%

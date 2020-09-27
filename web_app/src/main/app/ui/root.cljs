@@ -181,8 +181,8 @@
                     :account/email
                     {:account/projects (comp/get-query ProjectItem)}
                     {:account/runs (comp/get-query RunItem)}
-                    [df/marker-table :app.model.project/create-project-with-files]
-                    ]
+                    [df/marker-table :create-project-with-files]
+                    [df/marker-table :add-example-project]]
    :pre-merge      (fn [{:keys [current-normalized data-tree]}]
                      (merge
                        {:ui/tab-value                        :projects
@@ -229,14 +229,11 @@
 
                       :on-create-project-done
                       (fn []
-                        (m/set-value! this :ui/create-project-modal-active? false)
-                        )})}
-  (let [marker           (log/spy (get-in (log/spy props) [[df/marker-table :app.model.project/create-project-with-files]]))
-        status           (:status marker)
-        progress-phase   (:progress-phase marker)
-        overall-progress (:overall-progress marker)
-        send-progress    (:send-progress marker)
-        receive-progress (:receive-progress marker)]
+                        (m/set-value! this :ui/create-project-modal-active? false))
+
+                      })}
+  (let [m-create-project-with-files (get-in props [[df/marker-table :create-project-with-files]])
+        m-add-example-project       (get-in props [[df/marker-table :add-example-project]])]
     (div
       (div :.ui.secondary.pointing.menu
            (map (fn [item] (a :.item {:key     (:value item)
@@ -250,38 +247,56 @@
         :projects
         (div
           (div :.ui.segment
-               (case status
-                 :loading
-                 (div :.ui.buttons
-                      (div
-                        :.ui.disabled.button
-                        (case progress-phase
-                          ;; phase is one of #{:sending :receiving :complete :failed}
-                          :sending
-                          (str "Uploading " send-progress "% ...")
+               (let [{:keys [status progress-phase overall-progress send-progress receive-progress]} m-create-project-with-files]
+                 (case status
+                   :loading
+                   (div :.ui.buttons
+                        (div
+                          :.ui.disabled.button
+                          (case progress-phase
+                            ;; phase is one of #{:sending :receiving :complete :failed}
+                            :sending
+                            (str "Uploading " send-progress "% ...")
 
 
-                          ;; NOTE: the following values for progress-phase are possible but do not need UI
-                          ;; indication at the moment since they will only take a fraction of a second:
-                          ;;     :receiving
-                          ;;     :complete
-                          ;;     :failed
+                            ;; NOTE: the following values for progress-phase are possible but do not need UI
+                            ;; indication at the moment since they will only take a fraction of a second:
+                            ;;     :receiving
+                            ;;     :complete
+                            ;;     :failed
 
-                          ;; default
-                          "Almost ready ..."))
-                      (button
-                        :.ui.button
-                        {:onClick (fn [] (app/abort! this :create-project-with-files))}
-                        "Cancel"))
+                            ;; default
+                            "Almost ready ..."))
+                        (button
+                          :.ui.button
+                          {:onClick (fn [] (app/abort! this :create-project-with-files))}
+                          "Cancel"))
 
-                 ;; TODO
-                 ;; :error
-                 ;; :complete
-                 (button
-                   :.ui.button
-                   {:onClick #(m/toggle! this :ui/create-project-modal-active?)}
-                   (i :.plus.icon)
-                   "New Project ..."))
+                   ;; TODO
+                   ;; :error
+                   ;; :complete
+                   (button
+                     :.ui.button
+                     {:onClick #(m/toggle! this :ui/create-project-modal-active?)}
+                     (i :.plus.icon)
+                     "New project ...")))
+
+               (let [{:keys [status progress-phase overall-progress send-progress receive-progress]} m-add-example-project]
+                 (case status
+                   :loading
+                   (button
+                     :.ui.disabled.button
+                     (i :.plus.icon)
+                     "Adding ...")
+
+                   (button
+                     :.ui.button
+                     {:onClick #(comp/transact!!
+                                  this
+                                  [{(project/add-example-project {:account-id id})
+                                    (comp/get-query SessionAccount)}])}
+                     (i :.plus.icon)
+                     "Add an example project")))
                ;; (if create-project-modal-active?
                ;;   (i :.angle.up.icon)
                ;;   (i :.angle.down.icon))

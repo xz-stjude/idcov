@@ -69,7 +69,7 @@ marker_ref <-
 out_df <- df_markers %>%
   left_join(df_mutations) %>%
   left_join(marker_ref) %>%
-  mutate(alt=if_else(n_covering_frags < MIN_FRAGS_TO_CONFIRM_MUTATION, 'Z', if_else(is.na(is_mutated), original_ref, alt))) %>%
+  mutate(alt=if_else(n_covering_frags < MIN_FRAGS_TO_CONFIRM_MUTATION, '?', if_else(is.na(is_mutated), original_ref, alt))) %>%
   mutate(ref=original_ref) %>%
   ## pos   n_covering_frags ref alt is_mutated original_ref
   ## 241   3531             C   C              C
@@ -118,7 +118,7 @@ work <- function(ns_id) {
     ## 20B   28882 A
     ## 20B   28883 C
     left_join(out_df %>% select(pos, alt), by=c("pos"), suffix=c("_strain", "_sample")) %>%
-    mutate(delta=if_else(alt_sample == 'Z', 0.5, if_else(alt_sample != alt_strain, 1, 0))) %>%
+    mutate(delta=if_else(alt_sample == '?', 0.5, if_else(alt_sample != alt_strain, 1, 0))) %>%
     group_by(clade) %>%
     summarize(manhattan=sum(delta)) %>%
     print %>%

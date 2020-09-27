@@ -8,7 +8,9 @@
             [datahike.api :as d]
             [com.fulcrologic.fulcro.networking.file-upload :as fu]
             [taoensso.timbre :as log]
-            [app.util :as util]))
+            [app.util :as util]
+            [app.server-components.config :as config]
+            [clojure.java.io :as io]))
 
 
 (defresolver project [{{output ::pc/output} ::pc/resolver-data
@@ -47,6 +49,22 @@
 
   {:account/id account-id})
 
+
+(defmutation add-example-project
+  [{:keys [conn]} {:keys [account-id] :as inputs}]
+  {}
+  ;; TODO: need to reject if the account id doesn't exist
+  (let [example-project-path (:example-project-path config/config)
+        files                (.listFiles (io/file example-project-path))
+        files-tx             (mapv file/link-file files)
+        example-project-tx   {:project/id    (java.util.UUID/randomUUID)
+                              :project/name  "Example project"
+                              :project/files files-tx}]
+    (d/transact conn [{:account/id       account-id
+                       :account/projects [example-project-tx]}]))
+
+  {:account/id account-id})
+
 (defmutation remove-project [{{{{initiator-account-id :account/id} :session/account} :session} :ring/request
 
                               :keys [conn]
@@ -61,7 +79,7 @@
   {:account/id account-id}
   )
 
-(def resolvers [create-project-with-files remove-project project])
+(def resolvers [create-project-with-files remove-project project add-example-project])
 
 
 ;; (

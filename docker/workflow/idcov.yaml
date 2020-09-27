@@ -1,0 +1,11 @@
+name: idcov
+dependencies:
+  - bioconda::bedtools
+  - bioconda::bwa
+  - bioconda::freebayes
+  - bioconda::samtools
+  - conda-forge::icu
+  - conda-forge::ncurses>=6.2
+  - conda-forge::openssl>=1.0
+  - conda-forge::pandoc
+  - conda-forge::r-base>=3.6

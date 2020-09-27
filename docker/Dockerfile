@@ -73,6 +73,14 @@ RUN apk add --no-cache make tzdata
 
 WORKDIR "/app"
 
+COPY workflow/idcov.yaml /app/idcov.yaml
+RUN conda env create -f /app/idcov.yaml
+
+RUN source activate idcov && R -e "install.packages(c('kableextra', 'rmarkdown', 'tidyverse'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN source activate idcov && R -e "install.packages(c('kableExtra'), dependencies=TRUE, repos='http://cran.rstudio.com/')"
+
+RUN apk add --no-cache libxt-dev
+
 COPY workflow /app/workflow
 ENV WORKFLOW_PATH /app/workflow
 
