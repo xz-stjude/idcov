@@ -8,7 +8,7 @@ azure:
     BASEPATH=/data/1000/var/idcov/ \
     LOG_PATH=/data/1000/var/idcov/log \
     PORT=3000 \
-    WORKFLOW_PATH=`realpath ../docker/workflow/` \
+    WORKFLOW_PATH=`realpath ../workflow/` \
     REFS_PATH=`realpath ../refs/` \
     EXAMPLE_PROJECT_PATH=/home/xzhu1/tmp/covid_samples/selected \
     npx shadow-cljs watch :main
@@ -18,7 +18,7 @@ desktop:
     BASEPATH=/var/lib/idcov/ \
     LOG_PATH=/var/lib/idcov/log \
     PORT=3000 \
-    WORKFLOW_PATH=`realpath ../docker/workflow/` \
+    WORKFLOW_PATH=`realpath ../workflow/` \
     REFS_PATH=`realpath ../refs/` \
     EXAMPLE_PROJECT_PATH=/home/xzhu1/tmp/covid_samples/selected \
     npx shadow-cljs watch :main
