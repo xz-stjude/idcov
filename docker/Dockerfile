@@ -83,9 +83,11 @@ RUN apk add --no-cache libxt-dev
 
 COPY workflow /app/workflow
 ENV WORKFLOW_PATH /app/workflow
+ENV EXAMPLE_PROJECT_PATH example
 
 RUN mkdir /idcov
 ENV BASEPATH /idcov
+ENV LOG_PATH /idcov/log
 
 COPY idcov_latest.jar /app/idcov.jar
 
