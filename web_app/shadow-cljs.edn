@@ -16,8 +16,7 @@
                        :asset-path "/js_dev/main"}
 
                  :devtools {:after-load  app.client/refresh
-                            :preloads    [com.fulcrologic.fulcro.inspect.preload
-                                          app.development-preload]
+                            :preloads    [com.fulcrologic.fulcro.inspect.preload]
                             :repl-pprint true}}
 
           :test {:target    :browser-test

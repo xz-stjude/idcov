@@ -1,31 +1,32 @@
 {:paths ["src/main" "resources"]
 
  :deps {
-        bidi                                {:mvn/version "2.1.6"}
+        bidi/bidi                           {:mvn/version "2.1.6"}
         bk/ring-gzip                        {:mvn/version "0.3.0"}
+        clojure-humanize/clojure-humanize   {:mvn/version "0.2.2"}
         com.cognitect/transit-clj           {:mvn/version "1.0.324"}
         com.fulcrologic/fulcro-garden-css   {:mvn/version "3.0.7"}
-        com.fulcrologic/fulcro              {:mvn/version "3.2.9"}
+        com.fulcrologic/fulcro              {:mvn/version "3.4.1"}
         com.fulcrologic/guardrails          {:mvn/version "0.0.12"}
         com.fulcrologic/semantic-ui-wrapper {:mvn/version "1.0.1"}
-        com.taoensso/timbre                 {:mvn/version "4.11.0-alpha1"}
+        com.fzakaria/slf4j-timbre           {:mvn/version "0.3.19"}
+        com.novemberain/langohr             {:mvn/version "5.1.0"}
+        com.taoensso/timbre                 {:mvn/version "5.0.1"}
         com.taoensso/tufte                  {:mvn/version "2.1.0"}
-        com.wsscode/pathom                  {:mvn/version "2.2.26"}
-        garden                              {:mvn/version "1.3.10"}
-        hiccup                              {:mvn/version "1.0.5"}
-        http-kit                            {:mvn/version "2.3.0"}
+        com.wsscode/pathom                  {:mvn/version "2.2.31"}
+        garden/garden                       {:mvn/version "1.3.10"}
+        hiccup/hiccup                       {:mvn/version "1.0.5"}
+        http-kit/http-kit                   {:mvn/version "2.5.0"}
         io.aviso/pretty                     {:mvn/version "0.1.37"}
         io.replikativ/datahike              {:mvn/version "0.3.1"}
         kibu/pushy                          {:mvn/version "0.3.8"}
         me.raynes/conch                     {:mvn/version "0.8.0"}
         me.raynes/fs                        {:mvn/version "1.4.6"}
-        mount                               {:mvn/version "0.1.16"}
+        mount/mount                         {:mvn/version "0.1.16"}
         org.clojure/clojure                 {:mvn/version "1.10.1"}
-        org.clojure/core.async              {:mvn/version "1.2.603"}
-        ring/ring-core                      {:mvn/version "1.7.1"}
+        org.clojure/core.async              {:mvn/version "1.3.610"}
+        ring/ring-core                      {:mvn/version "1.8.1"}
         ring/ring-defaults                  {:mvn/version "0.3.2"}
-        com.novemberain/langohr             {:mvn/version "5.1.0"}
-        clojure-humanize                    {:mvn/version "0.2.2"}
         }
 
  :aliases {:clj-tests {:extra-paths ["src/test"]
@@ -38,23 +39,22 @@
                  :extra-deps  {
                                ;; These are either for the editor or cljs
                                binaryage/devtools              {:mvn/version "1.0.2"}
-                               cider/cider-nrepl               {:mvn/version "0.25.1"}
+                               cider/cider-nrepl               {:mvn/version "0.25.3"}
                                clj-commons/pomegranate         {:mvn/version "1.2.0"}
                                com.cognitect/transit-cljs      {:mvn/version "0.8.264"}
-                               com.fzakaria/slf4j-timbre       {:mvn/version "0.3.19"}
                                com.gfredericks/clj-usage-graph {:mvn/version "0.3.0"} ;for generating graph
-                               expound                         {:mvn/version "0.7.2"}
+                               expound/expound                 {:mvn/version "0.7.2"}
                                fulcrologic/fulcro-spec         {:mvn/version "3.1.4"}
-                               nrepl/nrepl                     {:mvn/version "0.7.0"}
+                               nrepl/nrepl                     {:mvn/version "0.8.2"}
                                nubank/workspaces               {:mvn/version "1.0.15"}
-                               org.clojure/clojurescript       {:mvn/version "1.10.758"}
+                               org.clojure/clojurescript       {:mvn/version "1.10.773"}
                                org.clojure/tools.namespace     {:mvn/version "1.0.0"}
-                               refactor-nrepl                  {:mvn/version "2.5.0"}
+                               refactor-nrepl/refactor-nrepl   {:mvn/version "2.5.0"}
                                thheller/shadow-cljs            {:mvn/version "2.11.4"}
                                }}
 
-           :outdated {:extra-deps {antq/antq {:mvn/version "RELEASE"}}
-                      :main-opts  ["-m" "antq.core"]}
+           :antq {:extra-deps {antq/antq {:mvn/version "RELEASE"}}
+                  :main-opts  ["-m" "antq.core"]}
 
            :depstar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.117"}}
                      :main-opts  ["-m" "hf.depstar.uberjar"]}

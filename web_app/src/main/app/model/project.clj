@@ -53,15 +53,16 @@
 (defmutation add-example-project
   [{:keys [conn]} {:keys [account-id] :as inputs}]
   {}
-  ;; TODO: need to reject if the account id doesn't exist
-  (let [example-project-path (:example-project-path config/config)
-        files                (.listFiles (io/file example-project-path))
-        files-tx             (mapv file/link-file files)
-        example-project-tx   {:project/id    (java.util.UUID/randomUUID)
-                              :project/name  "Example project"
-                              :project/files files-tx}]
-    (d/transact conn [{:account/id       account-id
-                       :account/projects [example-project-tx]}]))
+  (let [example-project-path (:example-project-path config/config)]
+    (when (some? example-project-path)
+      ;; if example-project-path is nil, then this mutation is a noop
+      (let [files              (.listFiles (io/file example-project-path))
+            files-tx           (mapv file/link-file files)
+            example-project-tx {:project/id    (java.util.UUID/randomUUID)
+                                :project/name  "Example project"
+                                :project/files files-tx}]
+        (d/transact conn [{:account/id       account-id
+                           :account/projects [example-project-tx]}]))))
 
   {:account/id account-id})
 

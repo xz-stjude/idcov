@@ -1,13 +1,15 @@
 (ns app.application
-  (:require [com.fulcrologic.fulcro.networking.http-remote :as net]
-            [com.fulcrologic.fulcro.application :as app]
-            [com.fulcrologic.fulcro.components :as comp]
-            [com.fulcrologic.fulcro.networking.file-upload :as fu]
-            [com.fulcrologic.fulcro.data-fetch :as df]
-            [edn-query-language.core :as eql]
-            [com.fulcrologic.fulcro.algorithms.transit :as ft]
-            [cognitect.transit :as t]
-            [taoensso.timbre :as log]))
+  (:require
+   [cognitect.transit :as t]
+   [com.fulcrologic.fulcro.algorithms.transit :as ft]
+   [com.fulcrologic.fulcro.application :as app]
+   [com.fulcrologic.fulcro.components :as comp]
+   [com.fulcrologic.fulcro.data-fetch :as df]
+   [com.fulcrologic.fulcro.networking.file-upload :as fu]
+   [com.fulcrologic.fulcro.networking.http-remote :as net]
+   [edn-query-language.core :as eql]
+   [taoensso.timbre :as log]
+   ))
 
 (defn wrap-file-upload
   "copied from com.fulcrologic.fulcro.networking.file-upload/wrap-file-upload"

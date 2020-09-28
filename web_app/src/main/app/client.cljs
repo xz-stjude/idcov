@@ -21,25 +21,17 @@
    [taoensso.timbre.appenders.core :as appenders]
    ))
 
-(defn config
-  []
-  (log/set-level!
-    (if goog.DEBUG :debug :info))
-  (log/merge-config! {:output-fn    ts/prefix-output-fn
-                      :appenders    {:console (ts/console-appender)}
-                      :ns-blacklist ["com.fulcrologic.fulcro.algorithms.indexing"
-                                     "com.fulcrologic.fulcro.algorithms.tx-processing"
-                                     "com.fulcrologic.fulcro.data-fetch"
-                                     "com.fulcrologic.fulcro.inspect.inspect-client"
-                                     "com.fulcrologic.fulcro.routing.dynamic-routing"
-                                     "com.fulcrologic.fulcro.ui-state-machines"]}))
+(log/merge-config! {:min-level [["app.*" (if goog.DEBUG :debug :info)]
+                                ["*" :info]]
+                    :output-fn ts/prefix-output-fn
+                    :appenders {:console (ts/console-appender)}})
+
 (defn ^:export refresh []
   (log/info "Hot code Remount")
   (cssi/upsert-css "componentcss" {:component root/Root})
   (app/mount! SPA root/Root "app"))
 
 (defn ^:export init []
-  (config)
   (log/info "Application starting.")
   (cssi/upsert-css "componentcss" {:component root/Root})
   (inspect/app-started! SPA)

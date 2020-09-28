@@ -117,7 +117,7 @@
                                :run/message (binding [aviso-ex/*fonts* nil] (aviso-ex/format-exception e))}]))))))
 
   ;; (d/transact conn [{:account}])
-  )
+  )[]
 
 (defstate jrd
   :start (do

@@ -10,21 +10,21 @@
    [me.raynes.fs :as fs]
    [app.util :as util]))
 
+(defn testy-getenv
+  [n]
+  (or (System/getenv n)
+      (throw (ex-info "A required environment variable is not defined." {:var n}))))
+
 (def default-config
   {:legal-origins #{"product.domain" "localhost"}
 
-   :basepath             (or (System/getenv "BASEPATH") (.getAbsoluteFile (io/file "./state")))
-   :workflow-path        (or (System/getenv "WORKFLOW_PATH") (.getAbsoluteFile (io/file "./workflow")))
-   :refs-path            (or (System/getenv "REFS_PATH") (.getAbsoluteFile (io/file "./refs")))
-   :example-project-path (or (System/getenv "EXAMPLE_PROJECT_PATH") nil)
+   :basepath             (testy-getenv "BASEPATH")
+   :workflow-path        (testy-getenv "WORKFLOW_PATH")
+   :refs-path            (testy-getenv "REFS_PATH")
+   :example-project-path (testy-getenv "EXAMPLE_PROJECT_PATH")
    :js-main-url          "/js/main/main.js"
 
-   ;; :db-location    "/var/idcov/db"
-   ;; :file-base-path "/var/idcov/files"
-   ;; :run-base-path  "/var/idcov/runs"
-   ;; :log-path       "/var/idcov/log"
-
-   :org.httpkit.server/config {:port     (Integer/parseInt (or (System/getenv "PORT") "8080"))
+   :org.httpkit.server/config {:port     (Integer/parseInt (testy-getenv "PORT"))
                                :max-body 2147483647}
 
    ;; The ssl-redirect defaulted to off, but for security should probably be on in production.
@@ -77,21 +77,9 @@
 ;; taoensso.timbre needs to configured effectfully
 (defn configure-logging!
   [debug?]
-  (log/merge-config! {:level        (if debug? :debug :info)
-                      :ns-whitelist []
-                      ;; :ns-blacklist ["datomic.kv-cluster"
-                      ;;                "datomic.process-monitor"
-                      ;;                "datomic.reconnector2"
-                      ;;                "datomic.common"
-                      ;;                "datomic.peer"
-                      ;;                "datomic.log"
-                      ;;                "datomic.db"
-                      ;;                "datomic.slf4j"
-                      ;;                "org.projectodd.wunderboss.web.Web"
-                      ;;                "shadow.cljs.devtools.server.worker.impl"]
-                      ;; persist the log into a file
-                      :output-fn    simple-output-fn
-                      :appenders    {:spit (appenders/spit-appender {:fname "/data/1000/var/idcov/log"})}}))
+  (log/merge-config! {:min-level (if debug? :debug :info)
+                      :output-fn simple-output-fn
+                      :appenders {:spit (appenders/spit-appender {:fname (testy-getenv "LOG_PATH")})}}))
 
 
 (defn merge-dev-config
@@ -102,9 +90,6 @@
       (merge config-map
              {:taoensso.timbre/logging-config
               {:level :debug}
-
-              :org.httpkit.server/config
-              {:port 3000}
 
               :js-main-url
               "/js_dev/main/main.js"}))

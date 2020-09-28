@@ -19,13 +19,15 @@
   ;; A request to this resolver should come with it a UUID in its cookie (under the field \"session\"). The biggest significance
   ;; of a valid session is its association with an account. The mass majority of the things presented to the client
   ;; are with respect to this account. In a way, this account is the peephole through which the client looks at the whole database."
-  [{{{{id :account/id} :session/account
-      valid?           :session/valid?} :session} :ring/request} _input]
+  [env _input]
   {::pc/output [{::current-session [:session/valid?
                                     {:session/account [:account/id]}]}]}
-  (if valid?
-    {::current-session {:session/valid? true :session/account {:account/id id}}}
-    {::current-session {:session/valid? false}}))
+  (let [session    (get-in env [:ring/request :session])
+        valid?     (get-in session [:session/valid?])
+        account-id (get-in session [:session/account :account/id])]
+    (if valid?
+      {::current-session {:session/valid? true :session/account {:account/id account-id}}}
+      {::current-session {:session/valid? false}})))
 
 (defn response-updating-session
   "Uses `mutation-response` as the actual return value for a mutation, but also stores the data into the (cookie-based) session."
@@ -49,7 +51,6 @@
                [?e :account/email ?email]
                [?e :account/password ?password]]
              @conn email)]
-    (log/debug (format "expected-email = %s, expected-password = %s" expected-email expected-password))
     (if (and (= email expected-email) (= password expected-password))
       (response-updating-session env {:session/valid? true, :session/account {:account/id id}})
       (do

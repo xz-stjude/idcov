@@ -668,7 +668,7 @@
                                 :top      "0px"}]
                    [:.hr-paddings {:padding-left  16
                                    :padding-right 16}]]}
-  (let [current-tab   (some-> (dr/current-route this this) first keyword)
+  (let [current-tab   (some-> (dr/current-route this) first keyword)
         classnames    (css/get-classnames TopChrome)
         c-active      (:active classnames)
         c-floating    (:floating classnames)

@@ -57,16 +57,11 @@
       [:script {:src (:js-main-url config)}]]]))
 
 (defn wrap-html-routes [ring-handler]
-  ;; TODO: authentication
-  (fn [{:keys [uri anti-forgery-token] :as req}]
-    (cond
-      ;; (#{"/" "/index.html"} uri)
-      ;; (-> (resp/response (index anti-forgery-token))
-      ;;     (resp/content-type "text/html"))
-
-      :else
-      (-> (resp/response (index anti-forgery-token))
-          (resp/content-type "text/html")))))
+  ;; This catches all: if the request is not handled by any other wrappers,
+  ;; serve the SPA and let the frontend handle the paths (index.html)
+  (fn [{:keys [anti-forgery-token] :as req}]
+    (-> (resp/response (index anti-forgery-token))
+        (resp/content-type "text/html"))))
 
 (defn wrap-download-file [ring-handler]
   ;; TODO: authentication
@@ -143,8 +138,10 @@
   :start
   (let [defaults-config (:ring.middleware/defaults-config config)
         legal-origins   (get config :legal-origins #{"localhost"})]
-    (-> ;; not-found-handler
-      (wrap-html-routes identity)
+    (->
+      ;; not-found-handler
+      identity
+      wrap-html-routes
       wrap-download-file
       wrap-run-output-files
       (wrap-api "/api")
