@@ -1,6 +1,12 @@
 idCOV
 =====
 
+idCOV is a phylogenetic pipeline for quickly identifying the clades of
+SARS-CoV-2 virus isolates from raw sequencing data based on a selected
+clade-defining marker list. Web and equivalent command-line interfaces are
+available. It can be deployed on any Linux environment, including personal
+computer, HPC and the cloud.
+
 Installation
 ------------
 
